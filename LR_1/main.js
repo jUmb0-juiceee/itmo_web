@@ -135,9 +135,9 @@ function renderTable() {
                 <td>${dateStr}</td>
                 <td>${foreignerStr}</td>
                 <td class="actions-cell">
-                    <button class="action-btn btn-view" title="Посмотреть досье" onclick="openDossier(${student.id})">👁️</button>
-                    <button class="action-btn btn-edit" title="Редактировать" onclick="openEditForm(${student.id})">✏️</button>
-                    <button class="action-btn btn-delete" title="Удалить" onclick="handleDelete(${student.id})">🗑️</button>
+                    <button class="action-btn btn-view" title="Посмотреть досье" data-action="view" data-id="${student.id}">👁️</button>
+                    <button class="action-btn btn-edit" title="Редактировать" data-action="edit" data-id="${student.id}">✏️</button>
+                    <button class="action-btn btn-delete" title="Удалить" data-action="delete" data-id="${student.id}">🗑️</button>
                 </td>
             </tr>
         `;
@@ -229,7 +229,7 @@ function openEditForm(id) {
 btnAdd.addEventListener('click', () => {
     currentEditingId = null;
     document.getElementById('btn-save').textContent = 'Сохранить';
-    studentForm.reset(); 
+    studentForm.reset();
     showForm();
 });
 
@@ -245,5 +245,25 @@ btnBack2.addEventListener('click', () => {
 });
 
 studentForm.addEventListener('submit', handleFormSubmit);
+
+const tableBody = document.getElementById('students-table-body');
+if (tableBody) {
+    tableBody.addEventListener('click', function(event) {
+        const button = event.target.closest('button');
+        
+        if (!button) return;
+
+        const action = button.dataset.action;
+        const id = Number(button.dataset.id);
+
+        if (action === 'view') {
+            openDossier(id);
+        } else if (action === 'edit') {
+            openEditForm(id);
+        } else if (action === 'delete') {
+            handleDelete(id);
+        }
+    });
+}
 
 renderTable();
