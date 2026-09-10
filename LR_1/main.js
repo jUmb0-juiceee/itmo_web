@@ -51,25 +51,60 @@ function handleFormSubmit(event) {
     const isForeigner = document.getElementById('foreigner').checked; 
     const notes = document.getElementById('notes').value.trim();
 
-    if (fio.length < 3) {
-        alert("ФИО должно содержать минимум 3 символа!");
+    // все правила валидации
+
+    // 1. проверка фио (3 слова, с заглавной, только русский алфавит)
+    const fioRegex = /^[А-ЯЁ][а-яё]+\s[А-ЯЁ][а-яё]+\s[А-ЯЁ][а-яё]+$/;
+    if (!fioRegex.test(fio)) {
+        alert("Ошибка ФИО: Введите ровно три слова (Фамилия Имя Отчество). Каждое слово с заглавной буквы, только русские буквы.");
         return;
     }
 
-    if (isuRaw === "" || isNaN(Number(isuRaw))) {
-        alert("ИСУ ID должен быть заполнен и состоять из цифр!");
+    // 2. проверка группы (1 англ. заглавная буква + 4 цифры)
+    const groupRegex = /^[A-Z]\d{4}$/;
+    if (!groupRegex.test(group)) {
+        alert("Ошибка Группы: Группа должна состоять из одной заглавной английской буквы и четырех цифр (например, P3212).");
         return;
     }
 
-    if (!/^[a-zA-Zа-яА-Я]/.test(group)) {
-        alert("Группа должна начинаться с буквы!");
+    // 3. проверка ИСУ (Ровно 6 цифр)
+    const isuRegex = /^\d{6}$/;
+    if (!isuRegex.test(isuRaw)) {
+        alert("Ошибка ИСУ ID: ИСУ должен состоять ровно из 6 цифр.");
         return;
     }
 
+    // 4. проверка уникальности ИСУ (Защита от дубликатов)
+    const isIsuDuplicate = students.some(s => s.isu === Number(isuRaw) && s.id !== currentEditingId);
+    if (isIsuDuplicate) {
+        alert("Ошибка: Студент с таким ИСУ ID уже существует в системе!");
+        return;
+    }
+
+    // 5. проверка общаги и комнаты (Только положительные числа)
+    if (dormRaw && (isNaN(dormRaw) || Number(dormRaw) <= 0)) {
+        alert("Ошибка: Номер общежития должен быть положительным числом.");
+        return;
+    }
+    if (roomRaw && (isNaN(roomRaw) || Number(roomRaw) <= 0)) {
+        alert("Ошибка: Номер комнаты должен быть положительным числом.");
+        return;
+    }
+
+    // 6. проверка даты (Год не раньше 2000-го)
+    if (date) {
+        const selectedYear = new Date(date).getFullYear();
+        if (selectedYear < 2000) {
+            alert("Ошибка: Срок заселения не может быть раньше 2000 года.");
+            return;
+        }
+    }
+
+    // 7. если начали заполнять общагу - должны заполнить про неё всё
     const isDormBlockStarted = dormRaw || roomRaw || date;
     if (isDormBlockStarted) {
         if (!dormRaw || !roomRaw || !date) {
-            alert("Если вы указываете данные об общежитии, пожалуйста, заполните номер общежития, номер комнаты и срок заселения полностью. Либо оставьте все три поля пустыми.");
+            alert("Если вы указываете данные об общежитии, пожалуйста, заполните все три поля (общага, комната, дата).");
             return;
         }
     }
@@ -197,7 +232,7 @@ function openDossier(id) {
         </div>
     `;
 
-    dossierContent.innerHTML = dossierHTML;
+    document.getElementById('dossier-content').innerHTML = dossierHTML;
 
     showDossierScreen();
 }
