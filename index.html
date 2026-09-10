@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>Лабораторная №1</title>
+        <link rel="icon" type="image/png" href="cat.png">
+        <link rel="stylesheet" href="style.css"> 
+    </head>
+    <body>
+        <div id="screen-table">
+            <h2>Список студентов</h2>
+            <button id="btn-add">Добавить студента</button>
+
+            <div class="table-wrapper">
+                <table id="students-table">
+                    <thead>
+                        <tr>
+                            <th>ФИО</th>
+                            <th>Группа</th>
+                            <th>ИСУ ID</th>
+                            <th>Общежитие</th>
+                            <th>Комната</th>
+                            <th>Срок заселения</th>
+                            <th>Иностранный</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-table-body">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="screen-form">
+            <h2>Форма добавления/редактирования</h2>
+            <form id="student-form">
+                <div class="form-group">
+                    <label for="fio">ФИО студента:</label>
+                    <input type="text" id="fio" name="fio" required placeholder="Иванов Иван Иванович">
+                </div>
+
+                <div class="form-group">
+                    <label for="group">Группа:</label>
+                    <input type="text" id="group" name="group" required placeholder="W1488">
+                </div>
+
+                <div class="form-group">
+                    <label for="isu">ИСУ ID:</label>
+                    <input type="number" id="isu" name="isu" required placeholder="676767" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="dorm">Номер общежития:</label>
+                    <input type="number" id="dorm" name="dorm" placeholder="5" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="room">Номер комнаты:</label>
+                    <input type="number" id="room" name="room" placeholder="52" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="date">Срок заселения:</label>
+                    <input type="date" id="date" name="date">
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="foreigner" name="foreigner">
+                    <label for="foreigner">Иностранный студент</label>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Заметки:</label>
+                    <textarea id="notes" name="notes" rows="3" placeholder="Любая дополнительная информация" maxlength="200"></textarea>
+                    <small style="color: #777;">Максимум 200 символов (ограничение памяти)</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" id="btn-save">Сохранить</button>
+                    <button type="button" id="btn-back-1">Отмена</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="screen-dossier">
+            <h2>Досье студента</h2>
+            <div id="dossier-content" class="dossier-card">
+                
+            </div>
+            <button id="btn-back-2" style="margin-top: 20px;">Назад к списку</button>
+        </div>
+
+        <script src="data.js"></script>
+        <script src="main.js"></script>
+    </body>
+</html>
