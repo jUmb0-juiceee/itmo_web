@@ -266,13 +266,12 @@ button:hover {
     font-weight: 500;
 }
 
-/* Кнопка "Назад" внутри карточки досье */
-.dossier-card #btn-back-2 {
+.dossier-card #btn-close-dossier {
     background-color: var(--color-secondary);
     width: 100%;
     margin-top: 1.5rem;
 }
 
-.dossier-card #btn-back-2:hover {
+.dossier-card #btn-close-dossier:hover {
     background-color: var(--color-secondary-hover);
 }

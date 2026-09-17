@@ -1,15 +1,14 @@
-// Поиск элементов на странице
 const screenTable = document.getElementById('screen-table');
 const screenForm = document.getElementById('screen-form');
 
 const btnAdd = document.getElementById('btn-add');
-const btnBack1 = document.getElementById('btn-back-1');
+const btnCancelForm = document.getElementById('btn-cancel-form');
 
 const studentForm = document.getElementById('student-form');
 
 const screenDossier = document.getElementById('screen-dossier');
 const dossierContent = document.getElementById('dossier-content');
-const btnBack2 = document.getElementById('btn-back-2');
+const btnCloseDossier = document.getElementById('btn-close-dossier');
 
 // создаём глобальный массив студентов
 let students = loadStudentsFromCookie();
@@ -268,14 +267,14 @@ btnAdd.addEventListener('click', () => {
     showForm();
 });
 
-btnBack1.addEventListener('click', () => {
+btnCancelForm.addEventListener('click', () => {
     currentEditingId = null;
     document.getElementById('btn-save').textContent = 'Сохранить';
     studentForm.reset();
     showTable();
 });
 
-btnBack2.addEventListener('click', () => {
+btnCloseDossier.addEventListener('click', () => {
     showTable();
 });
 
