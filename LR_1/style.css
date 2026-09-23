@@ -33,6 +33,10 @@
     --shadow-md: 0 0.25rem 0.625rem rgba(0, 0, 0, 0.1);
 }
 
+* {
+    box-sizing: border-box;
+}
+
 #screen-form {
     display: none;
 }
@@ -164,8 +168,8 @@ button:hover {
     background-color: var(--color-success-hover);
 }
 
-/* МЕДИА ЗАПРОС ПО ШИРИНЕ ЭКРАНА (50rem = 800px) */
 
+/* МЕДИА ЗАПРОС ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ (менее 800px = 50rem) */
 @media (max-width: 50rem) {
     body {
         margin: 1%;
@@ -175,19 +179,36 @@ button:hover {
         font-size: 1.25rem;
     }
 
-    #btn-add, .form-actions button {
+    /* Кнопка добавления и кнопки внутри формы на всю ширину для удобного нажатия пальцем */
+    #btn-add, 
+    .form-actions button {
         width: 100%;
         margin-bottom: 0.625rem;
     }
     
+    /* Кнопки "Сохранить" и "Отмена" друг под другом */
     .form-actions {
         flex-direction: column;
+        gap: 0.625rem;
     }
 
-    #student-form, .dossier-card {
+    /* Форма и Досье занимают всю доступную ширину экрана, без минимальных ограничений */
+    #student-form, 
+    .dossier-card {
         width: 100%;
-        min-width: auto;
+        min-width: auto; /* Убираем ограничение, чтобы не было горизонтального скролла всей страницы */
         padding: 1rem;
+        margin: 1% auto;
+    }
+
+    /* В досье метки и значения выстраиваем в колонку на очень узких экранах */
+    .dossier-row {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .dossier-label {
+        width: 100%;
     }
 }
 
