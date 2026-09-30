@@ -1,0 +1,384 @@
+:root {
+    /* Основные цвета */
+    --color-primary: #3498db;
+    --color-primary-hover: #2980b9;
+    --color-success: #2ecc71;
+    --color-success-hover: #27ae60;
+    --color-warning: #f39c12;
+    --color-danger: #e74c3c;
+    --color-secondary: #95a5a6;
+    --color-secondary-hover: #7f8c8d;
+
+    /* Цвета текста */
+    --color-text-primary: #333;
+    --color-text-heading: #2c3e50;
+    --color-text-muted: #555;
+    --color-text-white: #ffffff;
+
+    /* Цвета фона */
+    --color-bg-body: #f4f4f9;
+    --color-bg-card: #ffffff;
+    --color-bg-table-stripe: #f9f9f9;
+    --color-bg-hover-view: #eafaf1;
+    --color-bg-hover-edit: #fef5e7;
+    --color-bg-hover-delete: #fdedec;
+
+    /* Цвета границ */
+    --color-border: #dddddd;
+    --color-border-light: #cccccc;
+    --color-border-dashed: #eeeeee;
+
+    /* Тени */
+    --shadow-sm: 0 0.125rem 0.3125rem rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 0.25rem 0.625rem rgba(0, 0, 0, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+#screen-form {
+    display: none;
+}
+
+#screen-dossier {
+    display: none; 
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 2%;
+    background-color: var(--color-bg-body);
+    color: var(--color-text-primary);
+}
+
+h2 {
+    color: var(--color-text-heading);
+    border-bottom: 0.125rem solid var(--color-primary);
+    padding-bottom: 1%;
+}
+
+button {
+    background-color: var(--color-primary);
+    color: var(--color-text-white);
+    border: none;
+    padding: 0.625rem 1.25rem;
+    font-size: 1rem;
+    border-radius: 0.3125rem;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--color-primary-hover);
+}
+
+/* СТИЛИ ДЛЯ СЕКЦИИ ФИЛЬТРАЦИИ (Новое) */
+.filter-section {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#filter-group {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: 0.0625rem solid var(--color-border-light);
+    flex: 1;
+    min-width: 12.5rem;
+    font-size: 1rem;
+}
+
+#btn-apply-filter, 
+#btn-clear-filter {
+    padding: 0.5rem 1rem;
+}
+
+/* СТИЛИ ДЛЯ ТАБЛИЦЫ */
+
+.table-wrapper {
+    overflow-x: auto;
+    margin-top: 2%;
+    background: var(--color-bg-card);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+#students-table {
+    width: 100%;
+    border-collapse: collapse; 
+}
+
+#students-table th, 
+#students-table td {
+    padding: 0.75rem 0.9375rem;
+    text-align: left;
+    border-bottom: 0.0625rem solid var(--color-border);
+}
+
+#students-table th {
+    background-color: var(--color-primary);
+    color: var(--color-text-white);
+    font-weight: bold;
+}
+
+#students-table tbody tr:nth-child(even) {
+    background-color: var(--color-bg-table-stripe);
+}
+
+.btn-view, .btn-edit, .btn-delete {
+    padding: 0.3125rem 0.625rem;
+    font-size: 0.75rem;
+    margin-right: 0.3125rem;
+}
+
+/* СТИЛИ ДЛЯ ФОРМЫ */
+
+#student-form {
+    background: var(--color-bg-card);
+    padding: 1.25rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-sm);
+    margin: 2% auto;
+    width: 40%;
+    min-width: 22rem;
+}
+
+.form-group {
+    margin-bottom: 0.9375rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.3125rem;
+    font-weight: bold;
+    color: var(--color-text-muted);
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.625rem;
+    border: 0.0625rem solid var(--color-border-light);
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.form-group textarea {
+    resize: vertical;
+    max-width: 100%;
+    min-height: 4.5rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-group input {
+    width: auto;
+    margin-right: 0.625rem;
+    transform: scale(1.5);
+}
+
+.form-actions {
+    margin-top: 2%;
+    display: flex;
+    gap: 0.625rem;
+}
+
+#btn-save {
+    background-color: var(--color-success);
+}
+
+#btn-save:hover {
+    background-color: var(--color-success-hover);
+}
+
+/* Стили для расширенной фильтрации */
+.filter-section {
+    background: var(--color-bg-card);
+    padding: 1.25rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+}
+
+.filter-section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--color-text-heading);
+    font-size: 1.1rem;
+}
+
+.filter-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 150px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 0.3125rem;
+    font-weight: bold;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.filter-group input,
+.filter-group select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 0.0625rem solid var(--color-border-light);
+    border-radius: 0.25rem;
+    font-size: 1rem;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.625rem;
+}
+
+.filter-actions button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+#btn-clear-filter {
+    background-color: var(--color-secondary);
+}
+
+#btn-clear-filter:hover {
+    background-color: var(--color-secondary-hover);
+}
+
+/* МЕДИА ЗАПРОС ПО ШИРИНЕ ЭКРАНА (50rem = 800px) */
+
+@media (max-width: 50rem) {
+    body {
+        margin: 1%;
+    }
+    
+    h2 {
+        font-size: 1.25rem;
+    }
+
+    #btn-add, .form-actions button {
+        width: 100%;
+        margin-bottom: 0.625rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+
+    #student-form, .dossier-card {
+        width: 100%;
+        min-width: auto;
+        padding: 1rem;
+    }
+
+    /* Адаптация фильтра для мобильных */
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    #filter-group {
+        width: 100%;
+    }
+}
+
+/* КНОПКИ С ЭМОДЗИ */
+
+.actions-cell {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.action-btn {
+    background: transparent;
+    border: 0.0625rem solid transparent;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.action-btn.btn-view:hover {
+    background-color: var(--color-bg-hover-view);
+    border-color: var(--color-success);
+    transform: scale(1.1);
+}
+
+.action-btn.btn-edit:hover {
+    background-color: var(--color-bg-hover-edit);
+    border-color: var(--color-warning);
+    transform: scale(1.1);
+}
+
+.action-btn.btn-delete:hover {
+    background-color: var(--color-bg-hover-delete);
+    border-color: var(--color-danger);
+    transform: scale(1.1);
+}
+
+/* СТИЛИ ДЛЯ ДОСЬЕ */
+
+.dossier-card {
+    background: var(--color-bg-card);
+    padding: 1.5625rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-md);
+    margin: 2% auto;
+    width: 40%;
+    min-width: 22rem;
+    line-height: 1.8;
+}
+
+.dossier-card h3 {
+    margin-top: 0;
+    color: var(--color-text-heading);
+    border-bottom: 0.125rem solid var(--color-primary);
+    padding-bottom: 0.625rem;
+    margin-bottom: 1.25rem;
+}
+
+.dossier-row {
+    display: flex;
+    margin-bottom: 0.625rem;
+    border-bottom: 0.0625rem dashed var(--color-border-dashed);
+    padding-bottom: 0.3125rem;
+}
+
+.dossier-label {
+    font-weight: bold;
+    width: 30%;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+.dossier-value {
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+/* Кнопка "Назад" внутри карточки досье */
+.dossier-card #btn-close-dossier {
+    background-color: var(--color-secondary);
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+.dossier-card #btn-close-dossier:hover {
+    background-color: var(--color-secondary-hover);
+}
