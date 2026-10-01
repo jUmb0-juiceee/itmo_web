@@ -44,12 +44,12 @@ function extractErrorMessage(errorData) {
 async function fetchStudents(filters = {}) {
     const params = new URLSearchParams();
     
-    // Добавляем все возможные фильтры
+    // Используем правильные названия полей из LR_1
     if (filters.group) params.append('group', filters.group);
-    if (filters.dormitory) params.append('dormitory', filters.dormitory);
+    if (filters.dorm) params.append('dorm', filters.dorm);
     if (filters.room) params.append('room', filters.room);
-    if (filters.is_foreigner !== undefined && filters.is_foreigner !== null) {
-        params.append('is_foreigner', filters.is_foreigner);
+    if (filters.isForeigner !== undefined && filters.isForeigner !== null) {
+        params.append('isForeigner', filters.isForeigner);
     }
     
     const url = params.toString() ? `${API_BASE_URL}/requests?${params.toString()}` : `${API_BASE_URL}/requests`;

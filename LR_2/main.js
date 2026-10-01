@@ -48,8 +48,8 @@ function renderStudents(students) {
 
     students.forEach(student => {
         const dateStr = student.date ? new Date(student.date).toLocaleDateString('ru-RU') : '-';
-        const foreignerStr = student.is_foreigner ? 'Да' : 'Нет';
-        const dormStr = student.dormitory ? student.dormitory : '-';
+        const foreignerStr = student.isForeigner ? 'Да' : 'Нет';
+        const dormStr = student.dorm ? student.dorm : '-';
         const roomStr = student.room ? student.room : '-';
 
         const row = `
@@ -88,13 +88,15 @@ async function loadStudents(filters = {}) {
 
 // === ЗАГРУЗКА ЧЕРЕЗ QUERY МЕТОД (POST с телом) ===
 
+// Функция для сложной фильтрации через QUERY метод
 async function loadStudentsViaQuery(filters) {
     const tbody = document.getElementById('students-table-body');
     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
     
     try {
-        const response = await fetch('http://127.0.0.1:8000/api/requests-query', {
-            method: 'POST',
+        // ИСПРАВЛЕНО: стучимся на /api/requests методом QUERY, а не на несуществующий /api/requests-query
+        const response = await fetch(`${API_BASE_URL}/requests`, {
+            method: 'QUERY', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(filters)
         });
@@ -120,10 +122,10 @@ studentForm.addEventListener('submit', async function(event) {
         isu: Number(document.getElementById('isu').value),
         fio: document.getElementById('fio').value.trim(),
         group: document.getElementById('group').value.trim(),
-        dormitory: document.getElementById('dorm').value ? Number(document.getElementById('dorm').value) : null,
+        dorm: document.getElementById('dorm').value ? Number(document.getElementById('dorm').value) : null, // Было dormitory
         room: document.getElementById('room').value ? Number(document.getElementById('room').value) : null,
         date: document.getElementById('date').value || null,
-        is_foreigner: document.getElementById('foreigner').checked,
+        isForeigner: document.getElementById('foreigner').checked, // Было is_foreigner
         notes: document.getElementById('notes').value.trim()
     };
 
@@ -171,10 +173,10 @@ document.getElementById('students-table-body').addEventListener('click', async f
             document.getElementById('fio').value = student.fio;
             document.getElementById('group').value = student.group;
             document.getElementById('isu').value = student.isu;
-            document.getElementById('dorm').value = student.dormitory || '';
+            document.getElementById('dorm').value = student.dorm || '';
             document.getElementById('room').value = student.room || '';
             document.getElementById('date').value = student.date || '';
-            document.getElementById('foreigner').checked = student.is_foreigner;
+            document.getElementById('foreigner').checked = student.isForeigner;
             document.getElementById('notes').value = student.notes || '';
             
             document.getElementById('btn-save').textContent = 'Обновить данные';
@@ -254,25 +256,22 @@ btnCloseDossier.addEventListener('click', () => {
 
 btnApplyFilter.addEventListener('click', () => {
     const group = filterGroupInput.value.trim();
-    const dormitory = document.getElementById('filter-dormitory').value;
-    const room = document.getElementById('filter-room').value; // Считываем комнату
+    const dorm = document.getElementById('filter-dormitory').value;
+    const room = document.getElementById('filter-room').value;
     const foreigner = document.getElementById('filter-foreigner').value;
     
     const filters = {};
     
     if (group) filters.group = group;
-    if (dormitory) filters.dormitory = Number(dormitory);
-    if (room) filters.room = Number(room); // Добавляем комнату в фильтры
-    if (foreigner !== '') filters.is_foreigner = foreigner === 'true';
+    if (dorm) filters.dorm = Number(dorm); // Было dormitory
+    if (room) filters.room = Number(room);
+    if (foreigner !== '') filters.isForeigner = foreigner === 'true'; // Было is_foreigner
     
-    // Считаем количество активных фильтров
     const filterCount = Object.keys(filters).length;
     
     if (filterCount <= 2) {
-        // Простая фильтрация через GET
         loadStudents(filters);
     } else {
-        // Сложная фильтрация через QUERY (POST)
         loadStudentsViaQuery(filters);
     }
 });

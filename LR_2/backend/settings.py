@@ -133,6 +133,30 @@ MAILERS = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+# Разрешаем все стандартные методы + QUERY
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+    'QUERY',
+]
+
+# Разрешаем все заголовки
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
 # Кастомный обработчик исключений для DRF
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'api.exceptions.custom_exception_handler'
