@@ -18,5 +18,15 @@
         "date": "2026-09-01",
         "isForeigner": true,
         "notes": ""
+    },
+    {
+        "isu": 999999,
+        "fio": "Синельников Никита Александрович",
+        "group": "M3301",
+        "dorm": null,
+        "room": null,
+        "date": null,
+        "isForeigner": true,
+        "notes": ""
     }
 ]

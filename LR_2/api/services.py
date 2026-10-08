@@ -50,16 +50,14 @@ class StudentService:
     @staticmethod
     def create_student(validated_data: dict) -> Student:
         """Создание нового студента с проверкой уникальности ИСУ"""
-        # Проверяем, не существует ли уже студент с таким ИСУ
-        existing = StudentRepository.get_by_isu(validated_data['isu'])
+        existing = StudentRepository.get_by_isu(validated_data.get('isu'))
         if existing:
             raise ValueError("Студент с таким ИСУ ID уже существует.")
         
-        # Создаём объект студента
         student = Student(
-            isu=validated_data['isu'],
-            fio=validated_data['fio'],
-            group=validated_data['group'],
+            isu=validated_data.get('isu'),
+            fio=validated_data.get('fio', ''),
+            group=validated_data.get('group', ''),
             dorm=validated_data.get('dorm'),
             room=validated_data.get('room'),
             date=validated_data.get('date'),
@@ -67,26 +65,22 @@ class StudentService:
             notes=validated_data.get('notes', '')
         )
         
-        # Сохраняем в репозиторий
         StudentRepository.add(student)
         return student
 
     @staticmethod
     def update_student(isu: int, validated_data: dict):
         """Обновление данных студента"""
-        # Проверяем, существует ли студент
         existing = StudentRepository.get_by_isu(isu)
         if not existing:
             return None
         
-        # Проверяем, не пытается ли пользователь занять чужой ИСУ
         new_isu = validated_data.get('isu')
         if new_isu and new_isu != isu:
             conflict = StudentRepository.get_by_isu(new_isu)
             if conflict:
                 raise ValueError("Студент с таким ИСУ ID уже существует.")
         
-        # Обновляем данные через репозиторий
         updated_student = StudentRepository.update(isu, validated_data)
         return updated_student
 

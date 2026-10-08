@@ -1,4 +1,5 @@
 # api/views.py
+import traceback
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -40,18 +41,20 @@ class StudentListCreateView(APIView):
 
     def post(self, request):
         """Создание нового студента (POST /api/requests)"""
-        # 1. Базовая проверка и приведение типов
-        validated_data, errors = StudentSerializer.validate(request.data)
-        
-        if errors:
-            # Определяем код: 400 для отсутствия полей, 422 для нарушения правил
-            # Если есть ошибки по обязательным полям (isu, fio, group) - это 400
-            is_bad_request = any(k in errors for k in ['isu', 'fio', 'group'] if 'обязательно' in str(errors[k]).lower())
-            code = status.HTTP_400_BAD_REQUEST if is_bad_request else status.HTTP_422_UNPROCESSABLE_ENTITY
-            return Response(format_error("Ошибка валидации", errors), status=code)
-
-        # 2. Бизнес-логика (проверка уникальности)
         try:
+            # 1. Базовая проверка и приведение типов
+            validated_data, errors = StudentSerializer.validate(request.data)
+            
+            if errors:
+                # ИСПРАВЛЕНО: используем .get() вместо прямого обращения к ключу
+                is_bad_request = any(
+                    errors.get(k) and 'обязательно' in str(errors.get(k)).lower()
+                    for k in ['isu', 'fio', 'group']
+                )
+                code = status.HTTP_400_BAD_REQUEST if is_bad_request else status.HTTP_422_UNPROCESSABLE_ENTITY
+                return Response({"error": "Ошибка валидации", "details": errors}, status=code)
+
+            # 2. Бизнес-логика (проверка уникальности)
             student = StudentService.create_student(validated_data)
             return Response(
                 StudentSerializer.to_representation(student),
@@ -59,9 +62,35 @@ class StudentListCreateView(APIView):
             )
         except ValueError as e:
             # Дубликат ИСУ
-            return Response(format_error(str(e)), status=status.HTTP_409_CONFLICT)
+            return Response(
+                {"error": str(e), "details": {"isu": str(e)}},
+                status=status.HTTP_409_CONFLICT
+            )
         except Exception as e:
-            return Response(format_error(str(e)), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Любая другая ошибка — возвращаем 500 с деталями
+            return Response(
+                {"error": "Внутренняя ошибка сервера", "details": {"server": str(e)}},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+        except Exception as e:
+            # ЯДЕРНЫЙ ПЕРЕХВАТ: печатаем полный стек ошибки
+            full_traceback = traceback.format_exc()
+            print("\n" + "!"*50)
+            print("КРИТИЧЕСКАЯ ОШИБКА В POST ЗАПРОСЕ:")
+            print(full_traceback)
+            print("!"*50 + "\n")
+            
+            return Response(
+                {
+                    "error": "Внутренняя ошибка сервера", 
+                    "details": {
+                        "server": str(e),
+                        "traceback": full_traceback # Отправляем стек ошибки прямо в браузер!
+                    }
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def query(self, request):
         """Сложная фильтрация (QUERY /api/requests)"""
@@ -96,39 +125,47 @@ class StudentDetailView(APIView):
 
     def patch(self, request, isu):
         """Частичное обновление студента (PATCH /api/requests/:id)"""
-        student = StudentService.get_student_by_isu(isu)
-        if not student:
-            return Response(format_error("Студент не найден"), status=status.HTTP_404_NOT_FOUND)
-
-        # ВАЖНО: Для PATCH мы смешиваем текущие данные с новыми перед валидацией,
-        # чтобы правило "общежитие требует комнаты" не ломалось при обновлении только ФИО.
-        current_data = StudentSerializer.to_representation(student)
-        for key in request.data:
-            if key in StudentSerializer.ALLOWED_FIELDS:
-                current_data[key] = request.data[key]
-
-        validated_data, errors = StudentSerializer.validate(current_data)
-        
-        if errors:
-            return Response(
-                format_error("Ошибка валидации", errors),
-                status=status.HTTP_422_UNPROCESSABLE_ENTITY
-            )
-
-        # Проверка на смену ИСУ на занятый
-        new_isu = validated_data.get('isu')
-        if new_isu and new_isu != isu:
-            if StudentService.get_student_by_isu(new_isu):
+        try:
+            student = StudentService.get_student_by_isu(isu)
+            if not student:
                 return Response(
-                    format_error("Студент с таким ИСУ ID уже существует"),
-                    status=status.HTTP_409_CONFLICT
+                    {"error": "Студент не найден", "details": {"isu": "Студент не найден"}},
+                    status=status.HTTP_404_NOT_FOUND
                 )
 
-        updated_student = StudentService.update_student(isu, validated_data)
-        return Response(
-            StudentSerializer.to_representation(updated_student),
-            status=status.HTTP_200_OK
-        )
+            # Смешиваем текущие данные с новыми перед валидацией
+            current_data = StudentSerializer.to_representation(student)
+            for key in request.data:
+                if key in StudentSerializer.ALLOWED_FIELDS:
+                    current_data[key] = request.data[key]
+
+            validated_data, errors = StudentSerializer.validate(current_data)
+            
+            if errors:
+                return Response(
+                    {"error": "Ошибка валидации", "details": errors},
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY
+                )
+
+            # Проверка на смену ИСУ на занятый
+            new_isu = validated_data.get('isu')
+            if new_isu and new_isu != isu:
+                if StudentService.get_student_by_isu(new_isu):
+                    return Response(
+                        {"error": "Студент с таким ИСУ ID уже существует", "details": {"isu": "Студент с таким ИСУ ID уже существует"}},
+                        status=status.HTTP_409_CONFLICT
+                    )
+
+            updated_student = StudentService.update_student(isu, validated_data)
+            return Response(
+                StudentSerializer.to_representation(updated_student),
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"error": "Внутренняя ошибка сервера", "details": {"server": str(e)}},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def delete(self, request, isu):
         """Удаление студента (DELETE /api/requests/:id)"""

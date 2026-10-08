@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 class StudentValidator:
     @staticmethod
@@ -15,32 +15,33 @@ class StudentValidator:
         # 1. ИСУ: ровно 6 цифр
         isu = data.get('isu')
         if isu is not None:
-            if not re.match(r'^\d{6}$', str(isu)):
+            isu_str = str(isu).strip()
+            if not re.match(r'^\d{6}$', isu_str):
                 errors['isu'] = "ИСУ ID должен состоять ровно из 6 цифр."
 
         # 2. ФИО: три слова, русские буквы, каждое с заглавной
         fio = data.get('fio')
         if fio is not None:
             fio_str = str(fio).strip()
-            # Проверка: 3 слова, каждое начинается с заглавной русской буквы, далее строчные русские буквы или дефис
             if not re.match(r'^[А-ЯЁ][а-яё\-]+ [А-ЯЁ][а-яё\-]+ [А-ЯЁ][а-яё\-]+$', fio_str):
                 errors['fio'] = "ФИО должно состоять из трёх слов на русском языке, каждое с заглавной буквы."
 
         # 3. Группа: заглавная латинская буква и 4 цифры
         group = data.get('group')
         if group is not None:
-            if not re.match(r'^[A-Z]\d{4}$', str(group).strip()):
+            group_str = str(group).strip()
+            if not re.match(r'^[A-Z]\d{4}$', group_str):
                 errors['group'] = "Группа должна состоять из одной заглавной латинской буквы и 4 цифр (например, M3301)."
 
         # 4. Общежитие и комната: положительные числа (>= 1)
         dorm = data.get('dorm')
         room = data.get('room')
         
-        if dorm is not None and dorm != '':
+        if dorm is not None and dorm != '' and dorm is not None:
             if not isinstance(dorm, int) or dorm < 1:
                 errors['dorm'] = "Номер общежития должен быть положительным числом."
         
-        if room is not None and room != '':
+        if room is not None and room != '' and room is not None:
             if not isinstance(room, int) or room < 1:
                 errors['room'] = "Номер комнаты должен быть положительным числом."
 
@@ -55,9 +56,9 @@ class StudentValidator:
                 errors['date'] = "Неверный формат даты. Используйте ГГГГ-ММ-ДД."
 
         # 6. Связанные поля: либо заполнены все три (dorm, room, date), либо ни одного
-        has_dorm = bool(dorm)
-        has_room = bool(room)
-        has_date = bool(date)
+        has_dorm = dorm is not None and dorm != '' and dorm != 0
+        has_room = room is not None and room != '' and room != 0
+        has_date = date is not None and date != ''
         
         fields_filled_count = sum([has_dorm, has_room, has_date])
         

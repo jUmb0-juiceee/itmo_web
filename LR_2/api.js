@@ -8,32 +8,44 @@ function extractErrorMessage(errorData) {
         return errorData;
     }
     
+    // Если есть поле details с ошибками по полям
+    if (errorData.details && typeof errorData.details === 'object') {
+        const details = errorData.details;
+        const messages = [];
+        
+        for (const [field, message] of Object.entries(details)) {
+            // Пропускаем серверные ошибки
+            if (field === 'server') continue;
+            
+            if (Array.isArray(message)) {
+                messages.push(...message);
+            } else if (typeof message === 'string') {
+                messages.push(message);
+            }
+        }
+        
+        if (messages.length > 0) {
+            return messages.join('\n');
+        }
+    }
+    
     // Если есть поле error и оно строка
     if (errorData.error && typeof errorData.error === 'string') {
         return errorData.error;
     }
     
-    // Если error - объект (например, {"isu": ["Ошибка"]})
-    if (errorData.error && typeof errorData.error === 'object') {
-        const errors = errorData.error;
-        // Берём первое поле с ошибкой и первое сообщение
-        const firstKey = Object.keys(errors)[0];
-        if (firstKey && Array.isArray(errors[firstKey])) {
-            return errors[firstKey][0];
-        }
-        if (firstKey && typeof errors[firstKey] === 'string') {
-            return errors[firstKey];
-        }
-    }
-    
-    // Если errorData - объект без поля error (например, {"isu": ["Ошибка"]})
+    // Если errorData - объект без поля error
     if (typeof errorData === 'object' && !errorData.error) {
-        const firstKey = Object.keys(errorData)[0];
-        if (firstKey && Array.isArray(errorData[firstKey])) {
-            return errorData[firstKey][0];
+        const messages = [];
+        for (const [field, message] of Object.entries(errorData)) {
+            if (Array.isArray(message)) {
+                messages.push(...message);
+            } else if (typeof message === 'string') {
+                messages.push(message);
+            }
         }
-        if (firstKey && typeof errorData[firstKey] === 'string') {
-            return errorData[firstKey];
+        if (messages.length > 0) {
+            return messages.join('\n');
         }
     }
     
