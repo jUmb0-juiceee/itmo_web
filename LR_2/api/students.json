@@ -20,13 +20,13 @@
         "notes": ""
     },
     {
-        "isu": 999999,
+        "isu": 666666,
         "fio": "Синельников Никита Александрович",
-        "group": "M3301",
+        "group": "M3300",
         "dorm": null,
         "room": null,
         "date": null,
-        "isForeigner": true,
+        "isForeigner": false,
         "notes": ""
     }
 ]

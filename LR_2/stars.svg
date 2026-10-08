@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+    <defs>
+        <g id="star" fill="#e5dfb6">
+            <path d="M0 -6 C.6 -1.2 1.2 -.6 6 0 C1.2 .6 .6 1.2 0 6 C-.6 1.2 -1.2 .6 -6 0 C-1.2 -.6 -.6 -1.2 0 -6 Z"/>
+            <circle r="9" opacity=".06"/>
+        </g>
+    </defs>
+
+    <!-- Редкие крупные звёзды с мягким свечением. -->
+    <use href="#star" transform="translate(145 154) scale(.8)"/>
+    <use href="#star" transform="translate(396 82) scale(.6)"/>
+    <use href="#star" transform="translate(694 176) scale(.85)"/>
+    <use href="#star" transform="translate(906 59) scale(.55)"/>
+    <use href="#star" transform="translate(1278 223) scale(.75)"/>
+    <use href="#star" transform="translate(73 353) scale(.5)"/>
+    <use href="#star" transform="translate(1346 407) scale(.55)"/>
+
+    <!-- Мелкие звёзды создают глубину ночного неба. -->
+    <g fill="#e8e4c4" opacity=".65">
+        <circle cx="112" cy="81" r="1"/>
+        <circle cx="266" cy="207" r="1.2"/>
+        <circle cx="518" cy="162" r="1"/>
+        <circle cx="644" cy="45" r=".8"/>
+        <circle cx="756" cy="252" r="1"/>
+        <circle cx="868" cy="108" r="1.2"/>
+        <circle cx="994" cy="54" r=".8"/>
+        <circle cx="1246" cy="270" r="1"/>
+        <circle cx="1344" cy="99" r="1.2"/>
+        <circle cx="56" cy="387" r=".8"/>
+        <circle cx="1302" cy="468" r="1"/>
+    </g>
+</svg>
