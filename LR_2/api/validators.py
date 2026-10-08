@@ -66,3 +66,62 @@ class StudentValidator:
             errors['non_field_errors'] = "Если указано общежитие, должны быть заполнены также комната и дата заселения (и наоборот)."
 
         return errors
+
+# api/validators.py (добавить в конец файла)
+
+class FilterValidator:
+    ALLOWED_FILTERS = ['group', 'dorm', 'room', 'isForeigner']
+
+    @staticmethod
+    def validate(filters: dict) -> tuple:
+        """
+        Проверяет параметры фильтрации на корректность.
+        Возвращает (cleaned_filters, errors).
+        """
+        errors = {}
+        cleaned = {}
+
+        for key, value in filters.items():
+            # Игнорируем неизвестные поля (или можно вернуть ошибку)
+            if key not in FilterValidator.ALLOWED_FILTERS:
+                continue
+            
+            # 1. Группа: 1 заглавная латинская буква + 4 цифры
+            if key == 'group':
+                if not isinstance(value, str) or not re.match(r'^[A-Z]\d{4}$', value.strip()):
+                    errors['group'] = "Группа должна состоять из одной заглавной латинской буквы и 4 цифр."
+                else:
+                    cleaned['group'] = value.strip()
+                    
+            # 2. Общежитие: целое число >= 1
+            elif key == 'dorm':
+                try:
+                    dorm_val = int(value)
+                    if dorm_val < 1:
+                        errors['dorm'] = "Номер общежития должен быть положительным числом."
+                    else:
+                        cleaned['dorm'] = dorm_val
+                except (ValueError, TypeError):
+                    errors['dorm'] = "Номер общежития должен быть числом."
+                    
+            # 3. Комната: целое число >= 1
+            elif key == 'room':
+                try:
+                    room_val = int(value)
+                    if room_val < 1:
+                        errors['room'] = "Номер комнаты должен быть положительным числом."
+                    else:
+                        cleaned['room'] = room_val
+                except (ValueError, TypeError):
+                    errors['room'] = "Номер комнаты должен быть числом."
+                    
+            # 4. Иностранный студент: булево значение (или строка 'true'/'false')
+            elif key == 'isForeigner':
+                if isinstance(value, bool):
+                    cleaned['isForeigner'] = value
+                elif isinstance(value, str) and value.lower() in ['true', 'false']:
+                    cleaned['isForeigner'] = value.lower() == 'true'
+                else:
+                    errors['isForeigner'] = "Значение должно быть true или false."
+
+        return cleaned, errors

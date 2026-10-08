@@ -19,25 +19,19 @@ class StudentService:
             group_filter = str(filters['group']).upper()
             filtered = [s for s in filtered if s.group.upper() == group_filter]
         
-        # Фильтрация по общежитию
+        # Фильтрация по общежитию (тип int уже гарантирован валидатором)
         if 'dorm' in filters and filters['dorm'] is not None:
-            try:
-                dorm_filter = int(filters['dorm'])
-                filtered = [s for s in filtered if s.dorm == dorm_filter]
-            except (ValueError, TypeError):
-                pass  # Игнорируем некорректные фильтры
+            dorm_filter = int(filters['dorm'])
+            filtered = [s for s in filtered if s.dorm == dorm_filter]
         
-        # Фильтрация по комнате
+        # Фильтрация по комнате (тип int уже гарантирован)
         if 'room' in filters and filters['room'] is not None:
-            try:
-                room_filter = int(filters['room'])
-                filtered = [s for s in filtered if s.room == room_filter]
-            except (ValueError, TypeError):
-                pass
+            room_filter = int(filters['room'])
+            filtered = [s for s in filtered if s.room == room_filter]
         
-        # Фильтрация по иностранному студенту
+        # Фильтрация по иностранному студенту (тип bool уже гарантирован)
         if 'isForeigner' in filters and filters['isForeigner'] is not None:
-            foreigner_filter = str(filters['isForeigner']).lower() == 'true'
+            foreigner_filter = bool(filters['isForeigner'])
             filtered = [s for s in filtered if s.isForeigner == foreigner_filter]
         
         return filtered

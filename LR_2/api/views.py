@@ -7,6 +7,7 @@ from rest_framework import status
 from .serializers import StudentSerializer
 from .services import StudentService
 from .schemas import Student
+from .validators import StudentValidator, FilterValidator
 
 
 def format_error(message, details=None):
@@ -31,9 +32,17 @@ class StudentListCreateView(APIView):
         if request.query_params.get('room'):
             filters['room'] = request.query_params.get('room')
         if request.query_params.get('isForeigner'):
-            filters['isForeigner'] = request.query_params.get('isForeigner').lower() == 'true'
+            filters['isForeigner'] = request.query_params.get('isForeigner')
 
-        students = StudentService.get_all_students(filters)
+        # ВАЛИДАЦИЯ ФИЛЬТРОВ
+        cleaned_filters, errors = FilterValidator.validate(filters)
+        if errors:
+            return Response(
+                {"error": "Ошибка в параметрах фильтрации", "details": errors}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        students = StudentService.get_all_students(cleaned_filters)
         return Response(
             StudentSerializer.many_to_representation(students),
             status=status.HTTP_200_OK
@@ -98,11 +107,19 @@ class StudentListCreateView(APIView):
         
         if not isinstance(filters, dict):
             return Response(
-                format_error("Тело запроса должно быть JSON-объектом"),
+                {"error": "Тело запроса должно быть JSON-объектом"},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        students = StudentService.get_all_students(filters)
+        # ВАЛИДАЦИЯ ФИЛЬТРОВ
+        cleaned_filters, errors = FilterValidator.validate(filters)
+        if errors:
+            return Response(
+                {"error": "Ошибка в параметрах фильтрации", "details": errors}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        students = StudentService.get_all_students(cleaned_filters)
         return Response(
             StudentSerializer.many_to_representation(students),
             status=status.HTTP_200_OK
