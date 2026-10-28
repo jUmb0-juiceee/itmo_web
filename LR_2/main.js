@@ -1,46 +1,37 @@
-// main.js
-const screenTable = document.getElementById('screen-table');
-const screenForm = document.getElementById('screen-form');
-const screenDossier = document.getElementById('screen-dossier');
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 
-const btnAdd = document.getElementById('btn-add');
-const btnCancelForm = document.getElementById('btn-cancel-form');
-const btnCloseDossier = document.getElementById('btn-close-dossier');
-const studentForm = document.getElementById('student-form');
-
-const filterGroupInput = document.getElementById('filter-group');
-const btnApplyFilter = document.getElementById('btn-apply-filter');
-const btnClearFilter = document.getElementById('btn-clear-filter');
-
-let currentEditingIsu = null;
-
-// === ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ ЭКРАНОВ ===
-
-function showForm() {
-    screenTable.style.display = 'none';
-    screenDossier.style.display = 'none';
-    screenForm.style.display = 'block';  
+// Чтение параметров из URL (например, ?isu=123456)
+function getUrlParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
 }
 
-function showTable() {
-    screenForm.style.display = 'none';   
-    screenTable.style.display = 'block';
-    screenDossier.style.display = 'none';
-    loadStudents(); // Перезагружаем данные с сервера при возврате
+// Красивое извлечение текста ошибки из ответа сервера
+function extractErrorMessage(errorData) {
+    if (typeof errorData === 'string') return errorData;
+    
+    if (errorData.details && typeof errorData.details === 'object') {
+        const messages = [];
+        for (const [field, message] of Object.entries(errorData.details)) {
+            if (field === 'server') continue;
+            if (Array.isArray(message)) messages.push(...message);
+            else if (typeof message === 'string') messages.push(message);
+        }
+        if (messages.length > 0) return messages.join('\n');
+    }
+    
+    if (errorData.error && typeof errorData.error === 'string') return errorData.error;
+    
+    return 'Неизвестная ошибка сервера';
 }
 
-function showDossierScreen() {
-    screenTable.style.display = 'none';
-    screenForm.style.display = 'none';
-    screenDossier.style.display = 'block';
-}
-
-// === ОТРИСОВКА ТАБЛИЦЫ (вынесена в отдельную функцию) ===
+// ОТРИСОВКА
 
 function renderStudents(students) {
     const tbody = document.getElementById('students-table-body');
-    tbody.innerHTML = '';
+    if (!tbody) return;
     
+    tbody.innerHTML = '';
     if (students.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #777;">Список студентов пуст.</td></tr>';
         return;
@@ -72,135 +63,17 @@ function renderStudents(students) {
     });
 }
 
-// === ЗАГРУЗКА СТУДЕНТОВ (GET с query-параметрами) ===
-
-async function loadStudents(filters = {}) {
-    const tbody = document.getElementById('students-table-body');
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
-    
-    try {
-        const students = await fetchStudents(filters);
-        renderStudents(students);
-    } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red;">Ошибка: ${error.message}</td></tr>`;
-    }
-}
-
-// === ЗАГРУЗКА ЧЕРЕЗ QUERY МЕТОД (POST с телом) ===
-
-// Функция для сложной фильтрации через QUERY метод
-async function loadStudentsViaQuery(filters) {
-    const tbody = document.getElementById('students-table-body');
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
-    
-    try {
-        // ИСПРАВЛЕНО: стучимся на /api/requests методом QUERY, а не на несуществующий /api/requests-query
-        const response = await fetch(`${API_BASE_URL}/requests`, {
-            method: 'QUERY', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(filters)
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Ошибка при фильтрации');
-        }
-        
-        const students = await response.json();
-        renderStudents(students);
-    } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red;">Ошибка: ${error.message}</td></tr>`;
-    }
-}
-
-// === ОБРАБОТКА ФОРМЫ ===
-
-studentForm.addEventListener('submit', async function(event) {
-    event.preventDefault();
-
-    const studentData = {
-        isu: Number(document.getElementById('isu').value),
-        fio: document.getElementById('fio').value.trim(),
-        group: document.getElementById('group').value.trim(),
-        dorm: document.getElementById('dorm').value ? Number(document.getElementById('dorm').value) : null, // Было dormitory
-        room: document.getElementById('room').value ? Number(document.getElementById('room').value) : null,
-        date: document.getElementById('date').value || null,
-        isForeigner: document.getElementById('foreigner').checked, // Было is_foreigner
-        notes: document.getElementById('notes').value.trim()
-    };
-
-    try {
-        if (currentEditingIsu !== null) {
-            await updateStudent(currentEditingIsu, studentData);
-        } else {
-            await createStudent(studentData);
-        }
-        
-        studentForm.reset();
-        currentEditingIsu = null;
-        document.getElementById('btn-save').textContent = 'Сохранить';
-        showTable();
-    } catch (error) {
-        alert(`Ошибка: ${error.message}`);
-    }
-});
-
-// === ОБРАБОТКА КЛИКОВ ПО ТАБЛИЦЕ ===
-
-document.getElementById('students-table-body').addEventListener('click', async function(event) {
-    const button = event.target.closest('button');
-    if (!button) return;
-
-    const action = button.dataset.action;
-    const isu = Number(button.dataset.isu);
-
-    try {
-        if (action === 'view') {
-            const student = await fetchStudent(isu);
-            if (!student) {
-                alert('Студент не найден');
-                return;
-            }
-            renderDossier(student);
-            showDossierScreen();
-        } else if (action === 'edit') {
-            const student = await fetchStudent(isu);
-            if (!student) {
-                alert('Студент не найден');
-                return;
-            }
-            currentEditingIsu = student.isu;
-            document.getElementById('fio').value = student.fio;
-            document.getElementById('group').value = student.group;
-            document.getElementById('isu').value = student.isu;
-            document.getElementById('dorm').value = student.dorm || '';
-            document.getElementById('room').value = student.room || '';
-            document.getElementById('date').value = student.date || '';
-            document.getElementById('foreigner').checked = student.isForeigner;
-            document.getElementById('notes').value = student.notes || '';
-            
-            document.getElementById('btn-save').textContent = 'Обновить данные';
-            showForm();
-        } else if (action === 'delete') {
-            if (confirm("Вы уверены, что хотите удалить этого студента?")) {
-                await deleteStudent(isu);
-                loadStudents(); // Перезагружаем таблицу с сервера
-            }
-        }
-    } catch (error) {
-        alert(`Ошибка: ${error.message}`);
-    }
-});
-
-// === ОТРИСОВКА ДОСЬЕ ===
-
 function renderDossier(student) {
+    const contentDiv = document.getElementById('dossier-content');
+    if (!contentDiv) return;
+
     const dateStr = student.date ? new Date(student.date).toLocaleDateString('ru-RU') : 'Не указано';
-    const foreignerStr = student.is_foreigner ? 'Да' : 'Нет';
-    const dormStr = student.dormitory ? `Общежитие №${student.dormitory}, комната ${student.room}` : 'Не проживает в общежитии';
+    // ИСПРАВЛЕНО: используем правильные имена полей
+    const foreignerStr = student.isForeigner ? 'Да' : 'Нет';
+    const dormStr = student.dorm ? `Общежитие №${student.dorm}, комната ${student.room}` : 'Не проживает в общежитии';
     const notesStr = student.notes ? student.notes : 'Заметок нет';
 
-    const dossierHTML = `
+    contentDiv.innerHTML = `
         <h3>${student.fio}</h3>
         <div class="dossier-row">
             <span class="dossier-label">Группа:</span>
@@ -227,63 +100,238 @@ function renderDossier(student) {
             <span class="dossier-value" style="background: #f9f9f9; padding: 10px; border-radius: 4px; display: block;">${notesStr}</span>
         </div>
     `;
-    document.getElementById('dossier-content').innerHTML = dossierHTML;
 }
 
-// === ОБРАБОТЧИКИ КНОПОК ===
+// ЗАГРУЗКА ДАННЫХ
 
-btnAdd.addEventListener('click', () => {
-    currentEditingIsu = null;
-    document.getElementById('btn-save').textContent = 'Сохранить';
-    studentForm.reset();
-    showForm();
-});
-
-btnCancelForm.addEventListener('click', () => {
-    currentEditingIsu = null;
-    document.getElementById('btn-save').textContent = 'Сохранить';
-    studentForm.reset();
-    showTable();
-});
-
-btnCloseDossier.addEventListener('click', () => {
-    showTable();
-});
-
-// === ЛОГИКА РАСШИРЕННОЙ ФИЛЬТРАЦИИ ===
-
-// === ЛОГИКА РАСШИРЕННОЙ ФИЛЬТРАЦИИ ===
-
-btnApplyFilter.addEventListener('click', () => {
-    const group = filterGroupInput.value.trim();
-    const dorm = document.getElementById('filter-dormitory').value;
-    const room = document.getElementById('filter-room').value;
-    const foreigner = document.getElementById('filter-foreigner').value;
+async function loadStudents(filters = {}) {
+    const tbody = document.getElementById('students-table-body');
+    if (!tbody) return;
     
-    const filters = {};
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
+    try {
+        const students = await fetchStudents(filters);
+        renderStudents(students);
+    } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red;">Ошибка: ${error.message}</td></tr>`;
+    }
+}
+
+async function loadStudentsViaQuery(filters) {
+    const tbody = document.getElementById('students-table-body');
+    if (!tbody) return;
     
-    if (group) filters.group = group;
-    if (dorm) filters.dorm = Number(dorm); // Было dormitory
-    if (room) filters.room = Number(room);
-    if (foreigner !== '') filters.isForeigner = foreigner === 'true'; // Было is_foreigner
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
+    try {
+        const response = await fetch(`${API_BASE_URL}/requests`, {
+            method: 'QUERY', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(filters)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(extractErrorMessage(errorData));
+        }
+        
+        const students = await response.json();
+        renderStudents(students);
+    } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red;">Ошибка: ${error.message}</td></tr>`;
+    }
+}
+
+async function loadStudentForEdit(isu) {
+    try {
+        const student = await fetchStudent(isu);
+        if (!student) {
+            alert('Студент не найден');
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        document.getElementById('fio').value = student.fio;
+        document.getElementById('group').value = student.group;
+        document.getElementById('isu').value = student.isu;
+        document.getElementById('dorm').value = student.dorm || '';
+        document.getElementById('room').value = student.room || '';
+        document.getElementById('date').value = student.date || '';
+        document.getElementById('foreigner').checked = student.isForeigner;
+        document.getElementById('notes').value = student.notes || '';
+        
+        document.getElementById('btn-save').textContent = 'Обновить данные';
+    } catch (error) {
+        alert('Ошибка загрузки: ' + error.message);
+        window.location.href = 'index.html';
+    }
+}
+
+async function loadDossier(isu) {
+    const contentDiv = document.getElementById('dossier-content');
+    if (!contentDiv) return;
     
-    const filterCount = Object.keys(filters).length;
-    
-    if (filterCount <= 2) {
-        loadStudents(filters);
-    } else {
-        loadStudentsViaQuery(filters);
+    contentDiv.innerHTML = '<p>Загрузка...</p>';
+    try {
+        const student = await fetchStudent(isu);
+        if (!student) {
+            contentDiv.innerHTML = '<p>Студент не найден</p>';
+            return;
+        }
+        renderDossier(student);
+    } catch (error) {
+        contentDiv.innerHTML = `<p style="color:red;">Ошибка: ${error.message}</p>`;
+    }
+}
+
+// ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+
+document.addEventListener('DOMContentLoaded', () => {
+    const currentIsu = getUrlParam('isu');
+
+    // Мы на главной странице
+    if (document.getElementById('students-table-body')) {
+        loadStudents({});
+    }
+    // Мы на странице формы
+    else if (document.getElementById('student-form')) {
+        if (currentIsu) {
+            loadStudentForEdit(currentIsu);
+        } else {
+            document.getElementById('btn-save').textContent = 'Сохранить';
+        }
+    }
+    // Мы на странице досье
+    else if (document.getElementById('dossier-content')) {
+        if (currentIsu) {
+            loadDossier(currentIsu);
+        }
     }
 });
 
-btnClearFilter.addEventListener('click', () => {
-    filterGroupInput.value = '';
-    document.getElementById('filter-dormitory').value = '';
-    document.getElementById('filter-room').value = ''; // Очищаем поле комнаты
-    document.getElementById('filter-foreigner').value = '';
-    loadStudents({});
-});
+// ОБРАБОТЧИКИ СОБЫТИЙ 
 
-// === ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ ===
+// --- Обработчики для index.html ---
+const btnAdd = document.getElementById('btn-add');
+if (btnAdd) {
+    btnAdd.addEventListener('click', () => {
+        window.location.href = 'form.html';
+    });
+}
 
-loadStudents();
+const tableBody = document.getElementById('students-table-body');
+if (tableBody) {
+    tableBody.addEventListener('click', (event) => {
+        const button = event.target.closest('button');
+        if (!button) return;
+
+        const action = button.dataset.action;
+        const isu = Number(button.dataset.isu);
+
+        if (action === 'view') {
+            window.location.href = `dossier.html?isu=${isu}`;
+        } else if (action === 'edit') {
+            window.location.href = `form.html?isu=${isu}`;
+        } else if (action === 'delete') {
+            if (confirm("Вы уверены, что хотите удалить этого студента?")) {
+                deleteStudent(isu).then(() => {
+                    loadStudents(); // Перезагружаем таблицу
+                }).catch(error => {
+                    alert(`Ошибка: ${error.message}`);
+                });
+            }
+        }
+    });
+}
+
+const btnApplyFilter = document.getElementById('btn-apply-filter');
+if (btnApplyFilter) {
+    btnApplyFilter.addEventListener('click', () => {
+        const group = document.getElementById('filter-group').value.trim();
+        const dorm = document.getElementById('filter-dormitory').value;
+        const room = document.getElementById('filter-room').value;
+        const foreigner = document.getElementById('filter-foreigner').value;
+        
+        const filters = {};
+        if (group) filters.group = group;
+        if (dorm) filters.dorm = Number(dorm);
+        if (room) filters.room = Number(room);
+        if (foreigner !== '') filters.isForeigner = foreigner === 'true';
+        
+        const filterCount = Object.keys(filters).length;
+        if (filterCount <= 2) {
+            loadStudents(filters);
+        } else {
+            loadStudentsViaQuery(filters);
+        }
+    });
+}
+
+const btnClearFilter = document.getElementById('btn-clear-filter');
+if (btnClearFilter) {
+    btnClearFilter.addEventListener('click', () => {
+        document.getElementById('filter-group').value = '';
+        document.getElementById('filter-dormitory').value = '';
+        document.getElementById('filter-room').value = '';
+        document.getElementById('filter-foreigner').value = '';
+        loadStudents({});
+    });
+}
+
+// --- Обработчики для form.html ---
+const studentForm = document.getElementById('student-form');
+if (studentForm) {
+    studentForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const studentData = {
+            isu: Number(document.getElementById('isu').value),
+            fio: document.getElementById('fio').value.trim(),
+            group: document.getElementById('group').value.trim(),
+            dorm: document.getElementById('dorm').value ? Number(document.getElementById('dorm').value) : null,
+            room: document.getElementById('room').value ? Number(document.getElementById('room').value) : null,
+            date: document.getElementById('date').value || null,
+            isForeigner: document.getElementById('foreigner').checked,
+            notes: document.getElementById('notes').value.trim()
+        };
+
+        const currentIsu = getUrlParam('isu');
+
+        try {
+            if (currentIsu) {
+                await updateStudent(currentIsu, studentData);
+            } else {
+                await createStudent(studentData);
+            }
+            
+            window.location.href = 'index.html';
+        } catch (error) {
+            let errorMsg = error.message;
+            if (error.response) {
+                try {
+                    const errorData = await error.response.json();
+                    errorMsg = extractErrorMessage(errorData);
+                } catch (e) {
+                }
+            }
+            alert(`Ошибка: ${errorMsg}`);
+        }
+    });
+}
+
+const btnCancelForm = document.getElementById('btn-cancel-form');
+if (btnCancelForm) {
+    btnCancelForm.addEventListener('click', (e) => {
+        if (btnCancelForm.tagName === 'BUTTON') {
+            e.preventDefault();
+            window.location.href = 'index.html';
+        }
+    });
+}
+
+// --- Обработчики для dossier.html ---
+const btnCloseDossier = document.getElementById('btn-close-dossier');
+if (btnCloseDossier) {
+    btnCloseDossier.addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
+}

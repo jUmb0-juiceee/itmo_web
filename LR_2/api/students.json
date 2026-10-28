@@ -3,7 +3,7 @@
         "isu": 123456,
         "fio": "Синельников Никита Александрович",
         "group": "M3301",
-        "dorm": 8,
+        "dorm": 5,
         "room": 11,
         "date": "2026-09-30",
         "isForeigner": false,
@@ -20,13 +20,13 @@
         "notes": ""
     },
     {
-        "isu": 666666,
+        "isu": 333333,
         "fio": "Синельников Никита Александрович",
-        "group": "M3300",
+        "group": "M3301",
         "dorm": null,
         "room": null,
         "date": null,
-        "isForeigner": false,
+        "isForeigner": true,
         "notes": ""
     }
 ]
