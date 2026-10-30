@@ -1,125 +1,172 @@
 // api.js
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
-// Универсальная функция для извлечения текста ошибки из ответа сервера
+// ==========================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ==========================================
+
+// Функция для экранирования HTML-сущностей (защита от XSS)
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    
+    const str = String(text);
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    
+    return str.replace(/[&<>"']/g, char => map[char]);
+}
+
+// Универсальная функция для извлечения текста ошибки из JSON-ответа сервера
 function extractErrorMessage(errorData) {
-    // Если errorData - строка, возвращаем её
-    if (typeof errorData === 'string') {
-        return errorData;
-    }
+    if (typeof errorData === 'string') return errorData;
     
-    // Если есть поле details с ошибками по полям
     if (errorData.details && typeof errorData.details === 'object') {
-        const details = errorData.details;
         const messages = [];
-        
-        for (const [field, message] of Object.entries(details)) {
-            // Пропускаем серверные ошибки
+        for (const [field, message] of Object.entries(errorData.details)) {
             if (field === 'server') continue;
-            
-            if (Array.isArray(message)) {
-                messages.push(...message);
-            } else if (typeof message === 'string') {
-                messages.push(message);
-            }
+            if (Array.isArray(message)) messages.push(...message);
+            else if (typeof message === 'string') messages.push(message);
         }
-        
-        if (messages.length > 0) {
-            return messages.join('\n');
-        }
+        if (messages.length > 0) return messages.join('\n');
     }
     
-    // Если есть поле error и оно строка
-    if (errorData.error && typeof errorData.error === 'string') {
-        return errorData.error;
-    }
+    if (errorData.error && typeof errorData.error === 'string') return errorData.error;
     
-    // Если errorData - объект без поля error
     if (typeof errorData === 'object' && !errorData.error) {
         const messages = [];
         for (const [field, message] of Object.entries(errorData)) {
-            if (Array.isArray(message)) {
-                messages.push(...message);
-            } else if (typeof message === 'string') {
-                messages.push(message);
-            }
+            if (Array.isArray(message)) messages.push(...message);
+            else if (typeof message === 'string') messages.push(message);
         }
-        if (messages.length > 0) {
-            return messages.join('\n');
-        }
+        if (messages.length > 0) return messages.join('\n');
     }
     
-    // Если ничего не подошло
     return 'Неизвестная ошибка сервера';
 }
 
-async function fetchStudents(filters = {}) {
-    const params = new URLSearchParams();
-    
-    // Используем правильные названия полей из LR_1
-    if (filters.group) params.append('group', filters.group);
-    if (filters.dorm) params.append('dorm', filters.dorm);
-    if (filters.room) params.append('room', filters.room);
-    if (filters.isForeigner !== undefined && filters.isForeigner !== null) {
-        params.append('isForeigner', filters.isForeigner);
+// Функция для определения типа ошибки и возврата понятного сообщения (сеть, таймаут и т.д.)
+function getErrorMessage(error) {
+    // Ошибка сети (нет интернета или сервер Django не запущен)
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        return 'Не удалось подключиться к серверу. Проверьте подключение к интернету или убедитесь, что бэкенд запущен.';
     }
     
-    const url = params.toString() ? `${API_BASE_URL}/requests?${params.toString()}` : `${API_BASE_URL}/requests`;
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(extractErrorMessage(errorData));
+    // Ошибка таймаута (если будете настраивать AbortController в будущем)
+    if (error.name === 'AbortError') {
+        return 'Превышено время ожидания ответа от сервера. Попробуйте позже.';
     }
-    return await response.json();
+    
+    // Если ошибка уже отформатирована функцией extractErrorMessage
+    if (error.message) {
+        return error.message;
+    }
+    
+    // Неизвестная ошибка
+    return 'Произошла неизвестная ошибка. Попробуйте обновить страницу.';
+}
+
+// ==========================================
+// API ФУНКЦИИ
+// ==========================================
+
+async function fetchStudents(filters = {}, page = 1, limit = 20) {
+    try {
+        const params = new URLSearchParams();
+        params.append('page', page);
+        params.append('limit', limit);
+        
+        for (const [key, value] of Object.entries(filters)) {
+            if (value !== null && value !== undefined && value !== '') {
+                params.append(key, value);
+            }
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/requests?${params.toString()}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(extractErrorMessage(errorData));
+        }
+        
+        return await response.json(); // Возвращаем весь объект { data: [...], pagination: {...} }
+    } catch (error) {
+        throw new Error(getErrorMessage(error));
+    }
 }
 
 async function fetchStudent(isu) {
-    const response = await fetch(`${API_BASE_URL}/requests/${isu}`);
-    if (response.status === 404) return null;
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(extractErrorMessage(errorData));
+    try {
+        const response = await fetch(`${API_BASE_URL}/requests/${isu}`);
+        
+        if (response.status === 404) return null;
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(extractErrorMessage(errorData));
+        }
+        
+        return await response.json();
+    } catch (error) {
+        throw new Error(getErrorMessage(error));
     }
-    return await response.json();
 }
 
 async function createStudent(studentData) {
-    const response = await fetch(`${API_BASE_URL}/requests`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(studentData)
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(extractErrorMessage(errorData));
+    try {
+        const response = await fetch(`${API_BASE_URL}/requests`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(studentData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(extractErrorMessage(errorData));
+        }
+        
+        return await response.json();
+    } catch (error) {
+        throw new Error(getErrorMessage(error));
     }
-    return await response.json();
 }
 
 async function updateStudent(isu, studentData) {
-    const response = await fetch(`${API_BASE_URL}/requests/${isu}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(studentData)
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(extractErrorMessage(errorData));
+    try {
+        const response = await fetch(`${API_BASE_URL}/requests/${isu}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(studentData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(extractErrorMessage(errorData));
+        }
+        
+        return await response.json();
+    } catch (error) {
+        throw new Error(getErrorMessage(error));
     }
-    return await response.json();
 }
 
 async function deleteStudent(isu) {
-    const response = await fetch(`${API_BASE_URL}/requests/${isu}`, {
-        method: 'DELETE'
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(extractErrorMessage(errorData));
+    try {
+        const response = await fetch(`${API_BASE_URL}/requests/${isu}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(extractErrorMessage(errorData));
+        }
+        
+        return true;
+    } catch (error) {
+        throw new Error(getErrorMessage(error));
     }
-    return true;
 }

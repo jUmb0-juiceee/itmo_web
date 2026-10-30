@@ -1,15 +1,14 @@
 import re
 from datetime import datetime
 from typing import Dict, Any
+from .constants import (
+    MAX_FIO_LENGTH, MAX_GROUP_LENGTH, MAX_NOTES_LENGTH,
+    MIN_DORM, MAX_DORM, MIN_ROOM, MAX_ROOM, MIN_YEAR
+)
 
 class StudentValidator:
     @staticmethod
     def validate(data: Dict[str, Any]) -> Dict[str, str]:
-        """
-        Проверяет данные по строгим правилам Лабораторной №1.
-        Возвращает словарь ошибок: {'поле': 'описание ошибки'}.
-        Если словарь пустой — данные валидны.
-        """
         errors = {}
 
         # 1. ИСУ: ровно 6 цифр
@@ -19,55 +18,68 @@ class StudentValidator:
             if not re.match(r'^\d{6}$', isu_str):
                 errors['isu'] = "ИСУ ID должен состоять ровно из 6 цифр."
 
-        # 2. ФИО: три слова, русские буквы, каждое с заглавной
+        # 2. ФИО
         fio = data.get('fio')
         if fio is not None:
             fio_str = str(fio).strip()
-            if not re.match(r'^[А-ЯЁ][а-яё\-]+ [А-ЯЁ][а-яё\-]+ [А-ЯЁ][а-яё\-]+$', fio_str):
+            if len(fio_str) > MAX_FIO_LENGTH:
+                errors['fio'] = f"ФИО не должно превышать {MAX_FIO_LENGTH} символов."
+            elif not re.match(r'^[А-ЯЁ][а-яё\-]+ [А-ЯЁ][а-яё\-]+ [А-ЯЁ][а-яё\-]+$', fio_str):
                 errors['fio'] = "ФИО должно состоять из трёх слов на русском языке, каждое с заглавной буквы."
 
-        # 3. Группа: заглавная латинская буква и 4 цифры
+        # 3. Группа
         group = data.get('group')
         if group is not None:
             group_str = str(group).strip()
-            if not re.match(r'^[A-Z]\d{4}$', group_str):
+            if len(group_str) > MAX_GROUP_LENGTH:
+                errors['group'] = f"Название группы не должно превышать {MAX_GROUP_LENGTH} символов."
+            elif not re.match(r'^[A-Z]\d{4}$', group_str):
                 errors['group'] = "Группа должна состоять из одной заглавной латинской буквы и 4 цифр (например, M3301)."
 
-        # 4. Общежитие и комната: положительные числа (>= 1)
+        # 4. Общежитие и комната
         dorm = data.get('dorm')
         room = data.get('room')
         
         if dorm is not None and dorm != '' and dorm is not None:
-            if not isinstance(dorm, int) or dorm < 1:
-                errors['dorm'] = "Номер общежития должен быть положительным числом."
+            if not isinstance(dorm, int) or dorm < MIN_DORM:
+                errors['dorm'] = f"Номер общежития должен быть положительным числом (от {MIN_DORM})."
+            elif dorm > MAX_DORM:
+                errors['dorm'] = f"Номер общежития не должен превышать {MAX_DORM}."
         
         if room is not None and room != '' and room is not None:
-            if not isinstance(room, int) or room < 1:
-                errors['room'] = "Номер комнаты должен быть положительным числом."
+            if not isinstance(room, int) or room < MIN_ROOM:
+                errors['room'] = f"Номер комнаты должен быть положительным числом (от {MIN_ROOM})."
+            elif room > MAX_ROOM:
+                errors['room'] = f"Номер комнаты не должен превышать {MAX_ROOM}."
 
-        # 5. Дата: год не раньше 2000
+        # 5. Дата
         date = data.get('date')
         if date is not None and date != '':
             try:
                 parsed_date = datetime.strptime(str(date), "%Y-%m-%d")
-                if parsed_date.year < 2000:
-                    errors['date'] = "Год в дате заселения не может быть раньше 2000."
+                if parsed_date.year < MIN_YEAR:
+                    errors['date'] = f"Год в дате заселения не может быть раньше {MIN_YEAR}."
             except ValueError:
                 errors['date'] = "Неверный формат даты. Используйте ГГГГ-ММ-ДД."
 
-        # 6. Связанные поля: либо заполнены все три (dorm, room, date), либо ни одного
+        # 6. Заметки
+        notes = data.get('notes')
+        if notes is not None:
+            notes_str = str(notes).strip()
+            if len(notes_str) > MAX_NOTES_LENGTH:
+                errors['notes'] = f"Заметки не должны превышать {MAX_NOTES_LENGTH} символов."
+
+        # 7. Связанные поля
         has_dorm = dorm is not None and dorm != '' and dorm != 0
         has_room = room is not None and room != '' and room != 0
         has_date = date is not None and date != ''
         
         fields_filled_count = sum([has_dorm, has_room, has_date])
-        
         if fields_filled_count not in [0, 3]:
             errors['non_field_errors'] = "Если указано общежитие, должны быть заполнены также комната и дата заселения (и наоборот)."
 
         return errors
 
-# api/validators.py (добавить в конец файла)
 
 class FilterValidator:
     ALLOWED_FILTERS = ['group', 'dorm', 'room', 'isForeigner']

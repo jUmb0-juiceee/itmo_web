@@ -23,7 +23,21 @@ class StudentListCreateView(APIView):
     http_method_names = ['get', 'post', 'query', 'options', 'head']
 
     def get(self, request):
-        """Получение списка студентов (GET /api/requests?group=...)"""
+        """Получение списка студентов с пагинацией (GET /api/requests?page=1&limit=20)"""
+        # Извлекаем параметры пагинации
+        try:
+            page = int(request.query_params.get('page', 1))
+            limit = int(request.query_params.get('limit', 20))
+            
+            if page < 1:
+                page = 1
+            if limit < 1 or limit > 100:
+                limit = 20
+        except (ValueError, TypeError):
+            page = 1
+            limit = 20
+        
+        # Извлекаем фильтры
         filters = {}
         if request.query_params.get('group'):
             filters['group'] = request.query_params.get('group')
@@ -34,7 +48,7 @@ class StudentListCreateView(APIView):
         if request.query_params.get('isForeigner'):
             filters['isForeigner'] = request.query_params.get('isForeigner')
 
-        # ВАЛИДАЦИЯ ФИЛЬТРОВ
+        # Валидация фильтров
         cleaned_filters, errors = FilterValidator.validate(filters)
         if errors:
             return Response(
@@ -42,9 +56,14 @@ class StudentListCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        students = StudentService.get_all_students(cleaned_filters)
+        # Получаем студентов с пагинацией
+        result = StudentService.get_students_paginated(page, limit, cleaned_filters)
+        
         return Response(
-            StudentSerializer.many_to_representation(students),
+            {
+                "data": StudentSerializer.many_to_representation(result["students"]),
+                "pagination": result["pagination"]
+            },
             status=status.HTTP_200_OK
         )
 

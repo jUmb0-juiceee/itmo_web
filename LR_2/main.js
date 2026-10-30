@@ -1,3 +1,10 @@
+// Состояние пагинации
+let currentPage = 1;
+const itemsPerPage = 20;
+
+
+let currentFilters = {};
+
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 
 // Чтение параметров из URL (например, ?isu=123456)
@@ -43,15 +50,23 @@ function renderStudents(students) {
         const dormStr = student.dorm ? student.dorm : '-';
         const roomStr = student.room ? student.room : '-';
 
+        // защищаем все пользовательские данные от XSS
+        const safeFio = escapeHtml(student.fio);
+        const safeGroup = escapeHtml(student.group);
+        const safeDorm = escapeHtml(dormStr);
+        const safeRoom = escapeHtml(roomStr);
+        const safeDate = escapeHtml(dateStr);
+        const safeForeigner = escapeHtml(foreignerStr);
+
         const row = `
             <tr>
-                <td>${student.fio}</td>
-                <td>${student.group}</td>
+                <td>${safeFio}</td>
+                <td>${safeGroup}</td>
                 <td>${student.isu}</td>
-                <td>${dormStr}</td>
-                <td>${roomStr}</td>
-                <td>${dateStr}</td>
-                <td>${foreignerStr}</td>
+                <td>${safeDorm}</td>
+                <td>${safeRoom}</td>
+                <td>${safeDate}</td>
+                <td>${safeForeigner}</td>
                 <td class="actions-cell">
                     <button class="action-btn btn-view" title="Посмотреть досье" data-action="view" data-isu="${student.isu}">👁️</button>
                     <button class="action-btn btn-edit" title="Редактировать" data-action="edit" data-isu="${student.isu}">✏️</button>
@@ -68,16 +83,23 @@ function renderDossier(student) {
     if (!contentDiv) return;
 
     const dateStr = student.date ? new Date(student.date).toLocaleDateString('ru-RU') : 'Не указано';
-    // ИСПРАВЛЕНО: используем правильные имена полей
     const foreignerStr = student.isForeigner ? 'Да' : 'Нет';
     const dormStr = student.dorm ? `Общежитие №${student.dorm}, комната ${student.room}` : 'Не проживает в общежитии';
     const notesStr = student.notes ? student.notes : 'Заметок нет';
 
+    // защищаем все пользовательские данные от XSS
+    const safeFio = escapeHtml(student.fio);
+    const safeGroup = escapeHtml(student.group);
+    const safeDorm = escapeHtml(dormStr);
+    const safeDate = escapeHtml(dateStr);
+    const safeForeigner = escapeHtml(foreignerStr);
+    const safeNotes = escapeHtml(notesStr);
+
     contentDiv.innerHTML = `
-        <h3>${student.fio}</h3>
+        <h3>${safeFio}</h3>
         <div class="dossier-row">
             <span class="dossier-label">Группа:</span>
-            <span class="dossier-value">${student.group}</span>
+            <span class="dossier-value">${safeGroup}</span>
         </div>
         <div class="dossier-row">
             <span class="dossier-label">ИСУ ID:</span>
@@ -85,35 +107,82 @@ function renderDossier(student) {
         </div>
         <div class="dossier-row">
             <span class="dossier-label">Проживание:</span>
-            <span class="dossier-value">${dormStr}</span>
+            <span class="dossier-value">${safeDorm}</span>
         </div>
         <div class="dossier-row">
             <span class="dossier-label">Срок заселения:</span>
-            <span class="dossier-value">${dateStr}</span>
+            <span class="dossier-value">${safeDate}</span>
         </div>
         <div class="dossier-row">
             <span class="dossier-label">Иностранный студент:</span>
-            <span class="dossier-value">${foreignerStr}</span>
+            <span class="dossier-value">${safeForeigner}</span>
         </div>
         <div class="dossier-row" style="flex-direction: column; border: none; margin-top: 15px;">
             <span class="dossier-label" style="width: 100%; margin-bottom: 5px;">Заметки:</span>
-            <span class="dossier-value" style="background: #f9f9f9; padding: 10px; border-radius: 4px; display: block;">${notesStr}</span>
+            <span class="dossier-value" style="background: #f9f9f9; padding: 10px; border-radius: 4px; display: block;">${safeNotes}</span>
         </div>
     `;
 }
 
 // ЗАГРУЗКА ДАННЫХ
 
-async function loadStudents(filters = {}) {
+async function loadStudents(filters = {}, page = 1) {
     const tbody = document.getElementById('students-table-body');
     if (!tbody) return;
     
+    currentFilters = filters;
     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
+    
     try {
-        const students = await fetchStudents(filters);
-        renderStudents(students);
+        const result = await fetchStudents(filters, page, itemsPerPage);
+        currentPage = page;
+        
+        renderStudents(result.data);
+        renderPagination(result.pagination, filters);
     } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red;">Ошибка: ${error.message}</td></tr>`;
+        // Красивое сообщение об ошибке с кнопкой "Повторить"
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="error-message">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-text">${error.message}</div>
+                    <button class="retry-btn" onclick="loadStudents(currentFilters, currentPage)">Повторить попытку</button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function renderPagination(pagination, filters) {
+    const paginationDiv = document.getElementById('pagination-controls');
+    if (!paginationDiv) return;
+    
+    paginationDiv.innerHTML = '';
+    
+    if (pagination.total_pages <= 1) return;
+    
+    // Кнопка "Назад"
+    if (pagination.has_prev) {
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '← Назад';
+        prevBtn.className = 'pagination-btn';
+        prevBtn.addEventListener('click', () => loadStudents(filters, pagination.page - 1));
+        paginationDiv.appendChild(prevBtn);
+    }
+    
+    // Информация о странице
+    const pageInfo = document.createElement('span');
+    pageInfo.className = 'pagination-info';
+    pageInfo.textContent = `Страница ${pagination.page} из ${pagination.total_pages} (всего: ${pagination.total})`;
+    paginationDiv.appendChild(pageInfo);
+    
+    // Кнопка "Вперёд"
+    if (pagination.has_next) {
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = 'Вперёд →';
+        nextBtn.className = 'pagination-btn';
+        nextBtn.addEventListener('click', () => loadStudents(filters, pagination.page + 1));
+        paginationDiv.appendChild(nextBtn);
     }
 }
 
@@ -231,14 +300,42 @@ if (tableBody) {
             window.location.href = `dossier.html?isu=${isu}`;
         } else if (action === 'edit') {
             window.location.href = `form.html?isu=${isu}`;
-        } else if (action === 'delete') {
-            if (confirm("Вы уверены, что хотите удалить этого студента?")) {
-                deleteStudent(isu).then(() => {
-                    loadStudents(); // Перезагружаем таблицу
-                }).catch(error => {
+                } else if (action === 'delete') {
+            // Показываем модальное окно
+            const modal = document.getElementById('delete-modal');
+            modal.style.display = 'flex';
+            
+            // Обработчики кнопок модального окна
+            const confirmBtn = document.getElementById('modal-confirm');
+            const cancelBtn = document.getElementById('modal-cancel');
+            
+            // Удаляем старые обработчики (если есть)
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+            
+            // Добавляем новые обработчики
+            newConfirmBtn.addEventListener('click', async () => {
+                modal.style.display = 'none';
+                try {
+                    await deleteStudent(isu);
+                    loadStudents(currentFilters, currentPage); // Используем сохраненные фильтры
+                } catch (error) {
                     alert(`Ошибка: ${error.message}`);
-                });
-            }
+                }
+            });
+            
+            newCancelBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+            
+            // Закрытие по клику вне модального окна
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
         }
     });
 }

@@ -82,3 +82,37 @@ class StudentService:
     def delete_student(isu: int) -> bool:
         """Удаление студента. Возвращает True, если удален, False если не найден."""
         return StudentRepository.delete(isu)
+
+    @staticmethod
+    def get_students_paginated(page: int = 1, limit: int = 20, filters: dict = None) -> dict:
+        """
+        Получение студентов с пагинацией.
+        Возвращает словарь с данными и мета-информацией.
+        """
+        # Получаем всех студентов (с фильтрацией, если есть)
+        all_students = StudentService.get_all_students(filters)
+        
+        # Вычисляем общее количество
+        total = len(all_students)
+        
+        # Вычисляем границы
+        offset = (page - 1) * limit
+        end = offset + limit
+        
+        # Получаем подмножество
+        paginated_students = all_students[offset:end]
+        
+        # Вычисляем общее количество страниц
+        total_pages = (total + limit - 1) // limit if total > 0 else 0
+        
+        return {
+            "students": paginated_students,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_prev": page > 1
+            }
+        }

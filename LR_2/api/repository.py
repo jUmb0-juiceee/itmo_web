@@ -1,71 +1,109 @@
 import json
 import os
-from typing import List, Optional
+import threading
+from typing import List, Optional, Dict
 from .schemas import Student
 
-# Путь к файлу данных (в корне папки api или проекта, пусть будет в api)
-DATA_FILE = os.path.join(os.path.dirname(__file__), 'students.json')
 
 class StudentRepository:
+    """
+    Репозиторий студентов.
+    - кэш в памяти (файл читается один раз);
+    - индекс по ИСУ для поиска за O(1);
+    - RLock для потокобезопасной записи.
+    """
+
+    FILE_PATH = os.path.join(os.path.dirname(__file__), '..', 'students.json')
+
+    _cache: Optional[List[Student]] = None      # сохраняет порядок записей
+    _index: Dict[int, Student] = {}             # isu -> Student, поиск за O(1)
+    _lock = threading.RLock()                   # повторный захват тем же потоком разрешён
+
+    # === ВНУТРЕННИЕ МЕТОДЫ (вызываются только под локом) ===
+
     @staticmethod
-    def _load_data() -> List[dict]:
-        """Читает данные из JSON файла"""
-        if not os.path.exists(DATA_FILE):
+    def _read_from_file() -> List[Student]:
+        """Читает данные из JSON-файла и преобразует их в объекты Student."""
+        if not os.path.exists(StudentRepository.FILE_PATH):
             return []
+
         try:
-            with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
+            with open(StudentRepository.FILE_PATH, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return [Student(**item) for item in data]
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Ошибка чтения файла студентов: {e}")
             return []
 
     @staticmethod
-    def _save_data(data: List[dict]):
-        """Сохраняет данные в JSON файл"""
-        with open(DATA_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+    def _write_to_file(students: List[Student]):
+        """Записывает список студентов в JSON-файл."""
+        data = [s.__dict__ for s in students]
+        with open(StudentRepository.FILE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
-    @staticmethod
-    def get_all() -> List[Student]:
-        """Возвращает список всех студентов"""
-        raw_data = StudentRepository._load_data()
-        return [Student.from_dict(item) for item in raw_data]
+    @classmethod
+    def _ensure_loaded(cls):
+        """Ленивая загрузка кэша и построение индекса. Вызывать только под локом."""
+        if cls._cache is None:
+            cls._cache = cls._read_from_file()
+            cls._index = {s.isu: s for s in cls._cache}
 
-    @staticmethod
-    def get_by_isu(isu: int) -> Optional[Student]:
-        """Ищет студента по ИСУ"""
-        students = StudentRepository.get_all()
-        for student in students:
-            if student.isu == isu:
-                return student
-        return None
+    # === ПУБЛИЧНЫЙ ИНТЕРФЕЙС (сигнатуры не изменились) ===
 
-    @staticmethod
-    def add(student: Student):
-        """Добавляет нового студента"""
-        raw_data = StudentRepository._load_data()
-        raw_data.append(student.to_dict())
-        StudentRepository._save_data(raw_data)
+    @classmethod
+    def get_all(cls) -> List[Student]:
+        """Возвращает копию списка студентов (порядок сохраняется)."""
+        with cls._lock:
+            cls._ensure_loaded()
+            return list(cls._cache)
 
-    @staticmethod
-    def update(isu: int, updated_data: dict) -> Optional[Student]:
-        """Обновляет данные студента. Возвращает обновленного студента или None."""
-        raw_data = StudentRepository._load_data()
-        for i, item in enumerate(raw_data):
-            if item['isu'] == isu:
-                # Обновляем только переданные поля
-                item.update(updated_data)
-                StudentRepository._save_data(raw_data)
-                return Student.from_dict(item)
-        return None
+    @classmethod
+    def get_by_isu(cls, isu: int) -> Optional[Student]:
+        """Поиск студента по ИСУ за O(1) через индекс."""
+        with cls._lock:
+            cls._ensure_loaded()
+            return cls._index.get(isu)
 
-    @staticmethod
-    def delete(isu: int) -> bool:
-        """Удаляет студента по ИСУ. Возвращает True, если успешно."""
-        raw_data = StudentRepository._load_data()
-        initial_length = len(raw_data)
-        raw_data = [item for item in raw_data if item['isu'] != isu]
-        
-        if len(raw_data) < initial_length:
-            StudentRepository._save_data(raw_data)
+    @classmethod
+    def add(cls, student: Student):
+        """Добавление нового студента."""
+        with cls._lock:
+            cls._ensure_loaded()
+            cls._cache.append(student)
+            cls._index[student.isu] = student
+            cls._write_to_file(cls._cache)
+
+    @classmethod
+    def update(cls, isu: int, updated_data: dict) -> Optional[Student]:
+        """Обновление данных студента. Поддерживает смену ИСУ."""
+        with cls._lock:
+            cls._ensure_loaded()
+            student = cls._index.get(isu)
+            if student is None:
+                return None
+
+            for key, value in updated_data.items():
+                if hasattr(student, key):
+                    setattr(student, key, value)
+
+            # Если ИСУ изменился — переносим запись в индексе
+            if student.isu != isu:
+                cls._index.pop(isu, None)
+                cls._index[student.isu] = student
+
+            cls._write_to_file(cls._cache)
+            return student
+
+    @classmethod
+    def delete(cls, isu: int) -> bool:
+        """Удаление студента по ИСУ."""
+        with cls._lock:
+            cls._ensure_loaded()
+            student = cls._index.pop(isu, None)
+            if student is None:
+                return False
+
+            cls._cache = [s for s in cls._cache if s.isu != isu]
+            cls._write_to_file(cls._cache)
             return True
-        return False

@@ -163,6 +163,21 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div id="pagination-controls" class="pagination-controls"></div>
+            </div>
+
+            <!-- Модальное окно подтверждения удаления -->
+            <div id="delete-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <h3>Подтверждение удаления</h3>
+                    <p>Вы уверены, что хотите удалить этого студента?</p>
+                    <p class="modal-warning">Это действие нельзя отменить.</p>
+                    <div class="modal-actions">
+                        <button id="modal-cancel" class="btn-secondary">Отмена</button>
+                        <button id="modal-confirm" class="btn-danger">Удалить</button>
+                    </div>
+                </div>
             </div>
         </main>
         <footer class="site-footer">
