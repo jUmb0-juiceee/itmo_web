@@ -10,6 +10,11 @@ from .schemas import Student
 from .validators import StudentValidator, FilterValidator
 
 
+DEFAULT_PAGE = 1
+DEFAULT_LIMIT = 20
+MAX_LIMIT = 100
+
+
 def format_error(message, details=None):
     """Вспомогательная функция для единого формата ошибок"""
     error_body = {"error": message}
@@ -18,24 +23,33 @@ def format_error(message, details=None):
     return error_body
 
 
+def parse_pagination(params):
+    """
+    Достаёт page и limit из query-параметров (GET) или JSON-тела (QUERY).
+    Некорректные значения приводятся к значениям по умолчанию —
+    так GET и QUERY ведут себя одинаково.
+    """
+    try:
+        page = int(params.get('page', DEFAULT_PAGE))
+        limit = int(params.get('limit', DEFAULT_LIMIT))
+    except (ValueError, TypeError):
+        return DEFAULT_PAGE, DEFAULT_LIMIT
+
+    if page < 1:
+        page = DEFAULT_PAGE
+    if limit < 1 or limit > MAX_LIMIT:
+        limit = DEFAULT_LIMIT
+
+    return page, limit
+
+
 class StudentListCreateView(APIView):
     # Разрешаем методы: GET, POST, QUERY, OPTIONS, HEAD
     http_method_names = ['get', 'post', 'query', 'options', 'head']
 
     def get(self, request):
         """Получение списка студентов с пагинацией, фильтрами и поиском"""
-        # Извлекаем параметры пагинации
-        try:
-            page = int(request.query_params.get('page', 1))
-            limit = int(request.query_params.get('limit', 20))
-            
-            if page < 1:
-                page = 1
-            if limit < 1 or limit > 100:
-                limit = 20
-        except (ValueError, TypeError):
-            page = 1
-            limit = 20
+        page, limit = parse_pagination(request.query_params)
         
         # Извлекаем параметр поиска
         search = request.query_params.get('search', '').strip()
@@ -124,14 +138,38 @@ class StudentListCreateView(APIView):
             )
 
     def query(self, request):
-        """Сложная фильтрация (QUERY /api/requests)"""
-        filters = request.data
+        """Сложная фильтрация с пагинацией (QUERY /api/requests)"""
+        payload = request.data
         
-        if not isinstance(filters, dict):
+        if not isinstance(payload, dict):
             return Response(
                 {"error": "Тело запроса должно быть JSON-объектом"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Пагинация — те же page/limit и те же правила, что в GET
+        page, limit = parse_pagination(payload)
+
+        # Поиск обрабатывается отдельно от фильтров — так же, как в GET.
+        # Вырезаем его из тела до валидации: FilterValidator знает только
+        # про фильтры и молча игнорирует незнакомые ключи.
+        raw_search = payload.get('search', '')
+        if raw_search is None:
+            raw_search = ''
+        if not isinstance(raw_search, str):
+            return Response(
+                {
+                    "error": "Ошибка в параметре поиска",
+                    "details": {"search": "Параметр search должен быть строкой."}
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        search = raw_search.strip()
+
+        filters = {
+            key: value for key, value in payload.items()
+            if key not in ('search', 'page', 'limit')
+        }
         
         # ВАЛИДАЦИЯ ФИЛЬТРОВ
         cleaned_filters, errors = FilterValidator.validate(filters)
@@ -141,9 +179,15 @@ class StudentListCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        students = StudentService.get_all_students(cleaned_filters)
+        # Та же пагинация, что и в GET: поиск → фильтры → срез страницы
+        result = StudentService.get_students_paginated(
+            page, limit, cleaned_filters, search
+        )
         return Response(
-            StudentSerializer.many_to_representation(students),
+            {
+                "data": StudentSerializer.many_to_representation(result["students"]),
+                "pagination": result["pagination"]
+            },
             status=status.HTTP_200_OK
         )
 

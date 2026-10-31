@@ -1188,5 +1188,35 @@
     "date": "2024-09-01",
     "isForeigner": false,
     "notes": "Активный участник студенческой жизни"
+  },
+  {
+    "isu": 999999,
+    "fio": "Иванов Иван Иванович",
+    "group": "M3301",
+    "dorm": 5,
+    "room": 52,
+    "date": "2024-09-01",
+    "isForeigner": true,
+    "notes": ""
+  },
+  {
+    "isu": 999998,
+    "fio": "Иванов Иван Иванович",
+    "group": "M3301",
+    "dorm": 5,
+    "room": 52,
+    "date": "2024-09-01",
+    "isForeigner": true,
+    "notes": ""
+  },
+  {
+    "isu": 999997,
+    "fio": "Иванов Иван Антонович",
+    "group": "M3301",
+    "dorm": 5,
+    "room": 53,
+    "date": "2024-09-01",
+    "isForeigner": true,
+    "notes": ""
   }
 ]

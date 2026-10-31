@@ -35,6 +35,7 @@ let currentPage = 1;
 const itemsPerPage = 20;
 let currentFilters = {};
 let currentSearch = '';
+let currentUseQuery = false;
 
 // ==========================================
 // ОТРИСОВКА
@@ -130,7 +131,7 @@ function renderDossier(student) {
     `;
 }
 
-function renderPagination(pagination, filters) {
+function renderPagination(pagination, loadPage) {
     const paginationDiv = document.getElementById('pagination-controls');
     if (!paginationDiv) return;
     
@@ -143,7 +144,7 @@ function renderPagination(pagination, filters) {
         const prevBtn = document.createElement('button');
         prevBtn.textContent = '← Назад';
         prevBtn.className = 'pagination-btn';
-        prevBtn.addEventListener('click', () => loadStudents(filters, pagination.page - 1, currentSearch));
+        prevBtn.addEventListener('click', () => loadPage(pagination.page - 1));
         paginationDiv.appendChild(prevBtn);
     }
     
@@ -158,7 +159,7 @@ function renderPagination(pagination, filters) {
         const nextBtn = document.createElement('button');
         nextBtn.textContent = 'Вперёд →';
         nextBtn.className = 'pagination-btn';
-        nextBtn.addEventListener('click', () => loadStudents(filters, pagination.page + 1, currentSearch));
+        nextBtn.addEventListener('click', () => loadPage(pagination.page + 1));
         paginationDiv.appendChild(nextBtn);
     }
 }
@@ -173,38 +174,50 @@ async function loadStudents(filters = {}, page = 1, search = currentSearch) {
     
     currentFilters = filters;
     currentSearch = search;
+    currentUseQuery = false;
+    currentPage = page;
     
     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
     
     try {
         const result = await fetchStudents(filters, page, itemsPerPage, search);
-        currentPage = page;
+        currentPage = result.pagination.page;
         
         renderStudents(result.data);
-        renderPagination(result.pagination, filters);
+        renderPagination(result.pagination, (targetPage) => loadStudents(filters, targetPage, search));
     } catch (error) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="8" class="error-message">
                     <div class="error-icon">⚠️</div>
                     <div class="error-text">${error.message}</div>
-                    <button class="retry-btn" onclick="loadStudents(currentFilters, currentPage)">Повторить попытку</button>
+                    <button class="retry-btn" onclick="reloadCurrentList()">Повторить попытку</button>
                 </td>
             </tr>
         `;
     }
 }
 
-async function loadStudentsViaQuery(filters, search = currentSearch) {
+async function loadStudentsViaQuery(filters, search = currentSearch, page = 1) {
     const tbody = document.getElementById('students-table-body');
     if (!tbody) return;
+    
+    currentFilters = filters;
+    currentSearch = search;
+    currentUseQuery = true;
+    currentPage = page;
     
     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
     try {
         const response = await fetch(`${API_BASE_URL}/requests`, {
             method: 'QUERY', 
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...filters, search: search })
+            body: JSON.stringify({
+                ...filters,
+                search: search,
+                page: page,
+                limit: itemsPerPage
+            })
         });
         
         if (!response.ok) {
@@ -212,10 +225,30 @@ async function loadStudentsViaQuery(filters, search = currentSearch) {
             throw new Error(extractErrorMessage(errorData));
         }
         
-        const students = await response.json();
-        renderStudents(students);
+        const result = await response.json();
+        currentPage = result.pagination.page;
+        
+        renderStudents(result.data);
+        renderPagination(result.pagination, (targetPage) => loadStudentsViaQuery(filters, search, targetPage));
     } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red;">Ошибка: ${error.message}</td></tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="error-message">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-text">${error.message}</div>
+                    <button class="retry-btn" onclick="reloadCurrentList()">Повторить попытку</button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Перезагружает текущий список тем же способом, которым он был получен
+function reloadCurrentList() {
+    if (currentUseQuery) {
+        loadStudentsViaQuery(currentFilters, currentSearch, currentPage);
+    } else {
+        loadStudents(currentFilters, currentPage, currentSearch);
     }
 }
 
@@ -371,7 +404,7 @@ if (tableBody) {
                 modal.style.display = 'none';
                 try {
                     await deleteStudent(isu);
-                    loadStudents(currentFilters, currentPage, currentSearch);
+                    reloadCurrentList();
                 } catch (error) {
                     alert(`Ошибка: ${error.message}`);
                 }

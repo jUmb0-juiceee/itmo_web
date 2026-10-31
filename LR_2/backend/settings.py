@@ -44,9 +44,12 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'api.middleware.RateLimitMiddleware',
+    # CORS должен стоять выше остальных middleware, чтобы заголовки
+    # добавлялись и к ответам, которые генерируются до вызова view
+    # (например, 429 от RateLimitMiddleware).
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'api.middleware.RateLimitMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -133,6 +136,11 @@ MAILERS = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Доверять ли X-Forwarded-For при определении IP для rate limit.
+# Включать только если приложение реально стоит за доверенным reverse-proxy,
+# иначе клиент сможет подделать заголовок и обойти лимит.
+RATE_LIMIT_TRUST_X_FORWARDED_FOR = False
 
 # Разрешаем все стандартные методы + QUERY
 CORS_ALLOW_METHODS = [

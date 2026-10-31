@@ -1,6 +1,7 @@
 import json
 import os
 import threading
+from dataclasses import replace
 from typing import List, Optional, Dict
 from .schemas import Student
 
@@ -53,30 +54,42 @@ class StudentRepository:
 
     @classmethod
     def get_all(cls) -> List[Student]:
-        """Возвращает копию списка студентов (порядок сохраняется)."""
+        """
+        Возвращает список независимых копий студентов (порядок сохраняется).
+
+        Копируется не только список, но и каждый Student: иначе вызывающий
+        код мог бы изменить объект в кэше/индексе, не записав его в файл.
+        """
         with cls._lock:
             cls._ensure_loaded()
-            return list(cls._cache)
+            return [replace(s) for s in cls._cache]
 
     @classmethod
     def get_by_isu(cls, isu: int) -> Optional[Student]:
-        """Поиск студента по ИСУ за O(1) через индекс."""
+        """Поиск студента по ИСУ за O(1) через индекс. Возвращает копию."""
         with cls._lock:
             cls._ensure_loaded()
-            return cls._index.get(isu)
+            student = cls._index.get(isu)
+            return replace(student) if student is not None else None
 
     @classmethod
     def add(cls, student: Student):
         """Добавление нового студента."""
         with cls._lock:
             cls._ensure_loaded()
-            cls._cache.append(student)
-            cls._index[student.isu] = student
+            # Храним собственную копию: изменения объекта у вызывающего кода
+            # не должны попадать в кэш без явного update().
+            stored = replace(student)
+            cls._cache.append(stored)
+            cls._index[stored.isu] = stored
             cls._write_to_file(cls._cache)
 
     @classmethod
     def update(cls, isu: int, updated_data: dict) -> Optional[Student]:
-        """Обновление данных студента. Поддерживает смену ИСУ."""
+        """
+        Обновление данных студента. Поддерживает смену ИСУ.
+        Возвращает копию обновлённого студента.
+        """
         with cls._lock:
             cls._ensure_loaded()
             student = cls._index.get(isu)
@@ -93,7 +106,7 @@ class StudentRepository:
                 cls._index[student.isu] = student
 
             cls._write_to_file(cls._cache)
-            return student
+            return replace(student)
 
     @classmethod
     def delete(cls, isu: int) -> bool:
