@@ -5,36 +5,42 @@ from .schemas import Student
 
 class StudentService:
     @staticmethod
-    def get_all_students(filters: dict = None) -> list:
-        """Получение списка студентов с фильтрацией"""
+    def get_all_students(filters: dict = None, search: str = None) -> list:
+        """Получение списка студентов с фильтрацией и поиском"""
         students = StudentRepository.get_all()
         
-        if not filters:
-            return students
+        # 1. Применяем фильтры
+        if filters:
+            filtered = students
+            
+            if 'group' in filters and filters['group']:
+                group_filter = str(filters['group']).upper()
+                filtered = [s for s in filtered if s.group.upper() == group_filter]
+            
+            if 'dorm' in filters and filters['dorm'] is not None:
+                dorm_filter = int(filters['dorm'])
+                filtered = [s for s in filtered if s.dorm == dorm_filter]
+            
+            if 'room' in filters and filters['room'] is not None:
+                room_filter = int(filters['room'])
+                filtered = [s for s in filtered if s.room == room_filter]
+            
+            if 'isForeigner' in filters and filters['isForeigner'] is not None:
+                foreigner_filter = bool(filters['isForeigner'])
+                filtered = [s for s in filtered if s.isForeigner == foreigner_filter]
+            
+            students = filtered
         
-        filtered = students
+        # 2. Применяем поиск по ФИО и заметкам (регистронезависимо)
+        if search:
+            search_lower = search.lower().strip()
+            students = [
+                s for s in students
+                if search_lower in s.fio.lower() or 
+                   (s.notes and search_lower in s.notes.lower())
+            ]
         
-        # Фильтрация по группе (регистронезависимо)
-        if 'group' in filters and filters['group']:
-            group_filter = str(filters['group']).upper()
-            filtered = [s for s in filtered if s.group.upper() == group_filter]
-        
-        # Фильтрация по общежитию (тип int уже гарантирован валидатором)
-        if 'dorm' in filters and filters['dorm'] is not None:
-            dorm_filter = int(filters['dorm'])
-            filtered = [s for s in filtered if s.dorm == dorm_filter]
-        
-        # Фильтрация по комнате (тип int уже гарантирован)
-        if 'room' in filters and filters['room'] is not None:
-            room_filter = int(filters['room'])
-            filtered = [s for s in filtered if s.room == room_filter]
-        
-        # Фильтрация по иностранному студенту (тип bool уже гарантирован)
-        if 'isForeigner' in filters and filters['isForeigner'] is not None:
-            foreigner_filter = bool(filters['isForeigner'])
-            filtered = [s for s in filtered if s.isForeigner == foreigner_filter]
-        
-        return filtered
+        return students
 
     @staticmethod
     def get_student_by_isu(isu: int):
@@ -84,13 +90,12 @@ class StudentService:
         return StudentRepository.delete(isu)
 
     @staticmethod
-    def get_students_paginated(page: int = 1, limit: int = 20, filters: dict = None) -> dict:
+    def get_students_paginated(page: int = 1, limit: int = 20, filters: dict = None, search: str = None) -> dict:
         """
-        Получение студентов с пагинацией.
-        Возвращает словарь с данными и мета-информацией.
+        Получение студентов с пагинацией, фильтрами и поиском.
         """
-        # Получаем всех студентов (с фильтрацией, если есть)
-        all_students = StudentService.get_all_students(filters)
+        # Получаем всех студентов (с фильтрацией и поиском)
+        all_students = StudentService.get_all_students(filters, search)
         
         # Вычисляем общее количество
         total = len(all_students)

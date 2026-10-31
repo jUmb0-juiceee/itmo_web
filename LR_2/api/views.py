@@ -23,7 +23,7 @@ class StudentListCreateView(APIView):
     http_method_names = ['get', 'post', 'query', 'options', 'head']
 
     def get(self, request):
-        """Получение списка студентов с пагинацией (GET /api/requests?page=1&limit=20)"""
+        """Получение списка студентов с пагинацией, фильтрами и поиском"""
         # Извлекаем параметры пагинации
         try:
             page = int(request.query_params.get('page', 1))
@@ -36,6 +36,9 @@ class StudentListCreateView(APIView):
         except (ValueError, TypeError):
             page = 1
             limit = 20
+        
+        # Извлекаем параметр поиска
+        search = request.query_params.get('search', '').strip()
         
         # Извлекаем фильтры
         filters = {}
@@ -56,8 +59,8 @@ class StudentListCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Получаем студентов с пагинацией
-        result = StudentService.get_students_paginated(page, limit, cleaned_filters)
+        # Получаем студентов с пагинацией, фильтрами и поиском
+        result = StudentService.get_students_paginated(page, limit, cleaned_filters, search)
         
         return Response(
             {

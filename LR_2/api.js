@@ -74,18 +74,26 @@ function getErrorMessage(error) {
 // API ФУНКЦИИ
 // ==========================================
 
-async function fetchStudents(filters = {}, page = 1, limit = 20) {
-    try {
-        const params = new URLSearchParams();
-        params.append('page', page);
-        params.append('limit', limit);
-        
-        for (const [key, value] of Object.entries(filters)) {
-            if (value !== null && value !== undefined && value !== '') {
-                params.append(key, value);
-            }
+async function fetchStudents(filters = {}, page = 1, limit = 20, search = '') {
+    const params = new URLSearchParams();
+    
+    // Добавляем параметры пагинации
+    params.append('page', page);
+    params.append('limit', limit);
+    
+    // Добавляем поиск
+    if (search && search.trim()) {
+        params.append('search', search.trim());
+    }
+    
+    // Добавляем фильтры
+    for (const [key, value] of Object.entries(filters)) {
+        if (value !== null && value !== undefined && value !== '') {
+            params.append(key, value);
         }
-        
+    }
+    
+    try {
         const response = await fetch(`${API_BASE_URL}/requests?${params.toString()}`);
         
         if (!response.ok) {
@@ -93,7 +101,7 @@ async function fetchStudents(filters = {}, page = 1, limit = 20) {
             throw new Error(extractErrorMessage(errorData));
         }
         
-        return await response.json(); // Возвращаем весь объект { data: [...], pagination: {...} }
+        return await response.json();
     } catch (error) {
         throw new Error(getErrorMessage(error));
     }

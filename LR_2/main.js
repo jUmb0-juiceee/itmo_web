@@ -1,11 +1,6 @@
-// Состояние пагинации
-let currentPage = 1;
-const itemsPerPage = 20;
-
-
-let currentFilters = {};
-
+// ==========================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ==========================================
 
 // Чтение параметров из URL (например, ?isu=123456)
 function getUrlParam(name) {
@@ -32,7 +27,18 @@ function extractErrorMessage(errorData) {
     return 'Неизвестная ошибка сервера';
 }
 
+// ==========================================
+// ГЛОБАЛЬНОЕ СОСТОЯНИЕ
+// ==========================================
+
+let currentPage = 1;
+const itemsPerPage = 20;
+let currentFilters = {};
+let currentSearch = '';
+
+// ==========================================
 // ОТРИСОВКА
+// ==========================================
 
 function renderStudents(students) {
     const tbody = document.getElementById('students-table-body');
@@ -50,7 +56,7 @@ function renderStudents(students) {
         const dormStr = student.dorm ? student.dorm : '-';
         const roomStr = student.room ? student.room : '-';
 
-        // защищаем все пользовательские данные от XSS
+        // ЭКРАНИРОВАНИЕ: защищаем все пользовательские данные от XSS
         const safeFio = escapeHtml(student.fio);
         const safeGroup = escapeHtml(student.group);
         const safeDorm = escapeHtml(dormStr);
@@ -87,7 +93,7 @@ function renderDossier(student) {
     const dormStr = student.dorm ? `Общежитие №${student.dorm}, комната ${student.room}` : 'Не проживает в общежитии';
     const notesStr = student.notes ? student.notes : 'Заметок нет';
 
-    // защищаем все пользовательские данные от XSS
+    // ЭКРАНИРОВАНИЕ: защищаем все пользовательские данные от XSS
     const safeFio = escapeHtml(student.fio);
     const safeGroup = escapeHtml(student.group);
     const safeDorm = escapeHtml(dormStr);
@@ -124,35 +130,6 @@ function renderDossier(student) {
     `;
 }
 
-// ЗАГРУЗКА ДАННЫХ
-
-async function loadStudents(filters = {}, page = 1) {
-    const tbody = document.getElementById('students-table-body');
-    if (!tbody) return;
-    
-    currentFilters = filters;
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
-    
-    try {
-        const result = await fetchStudents(filters, page, itemsPerPage);
-        currentPage = page;
-        
-        renderStudents(result.data);
-        renderPagination(result.pagination, filters);
-    } catch (error) {
-        // Красивое сообщение об ошибке с кнопкой "Повторить"
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="error-message">
-                    <div class="error-icon">⚠️</div>
-                    <div class="error-text">${error.message}</div>
-                    <button class="retry-btn" onclick="loadStudents(currentFilters, currentPage)">Повторить попытку</button>
-                </td>
-            </tr>
-        `;
-    }
-}
-
 function renderPagination(pagination, filters) {
     const paginationDiv = document.getElementById('pagination-controls');
     if (!paginationDiv) return;
@@ -166,7 +143,7 @@ function renderPagination(pagination, filters) {
         const prevBtn = document.createElement('button');
         prevBtn.textContent = '← Назад';
         prevBtn.className = 'pagination-btn';
-        prevBtn.addEventListener('click', () => loadStudents(filters, pagination.page - 1));
+        prevBtn.addEventListener('click', () => loadStudents(filters, pagination.page - 1, currentSearch));
         paginationDiv.appendChild(prevBtn);
     }
     
@@ -181,12 +158,44 @@ function renderPagination(pagination, filters) {
         const nextBtn = document.createElement('button');
         nextBtn.textContent = 'Вперёд →';
         nextBtn.className = 'pagination-btn';
-        nextBtn.addEventListener('click', () => loadStudents(filters, pagination.page + 1));
+        nextBtn.addEventListener('click', () => loadStudents(filters, pagination.page + 1, currentSearch));
         paginationDiv.appendChild(nextBtn);
     }
 }
 
-async function loadStudentsViaQuery(filters) {
+// ==========================================
+// ЗАГРУЗКА ДАННЫХ
+// ==========================================
+
+async function loadStudents(filters = {}, page = 1, search = currentSearch) {
+    const tbody = document.getElementById('students-table-body');
+    if (!tbody) return;
+    
+    currentFilters = filters;
+    currentSearch = search;
+    
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
+    
+    try {
+        const result = await fetchStudents(filters, page, itemsPerPage, search);
+        currentPage = page;
+        
+        renderStudents(result.data);
+        renderPagination(result.pagination, filters);
+    } catch (error) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="error-message">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-text">${error.message}</div>
+                    <button class="retry-btn" onclick="loadStudents(currentFilters, currentPage)">Повторить попытку</button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+async function loadStudentsViaQuery(filters, search = currentSearch) {
     const tbody = document.getElementById('students-table-body');
     if (!tbody) return;
     
@@ -195,7 +204,7 @@ async function loadStudentsViaQuery(filters) {
         const response = await fetch(`${API_BASE_URL}/requests`, {
             method: 'QUERY', 
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(filters)
+            body: JSON.stringify({ ...filters, search: search })
         });
         
         if (!response.ok) {
@@ -252,16 +261,19 @@ async function loadDossier(isu) {
     }
 }
 
+// ==========================================
 // ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+// ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
     const currentIsu = getUrlParam('isu');
 
-    // Мы на главной странице
+    // 1. Мы на главной странице (index.html)
     if (document.getElementById('students-table-body')) {
-        loadStudents({});
+        loadStudents({}, 1, '');
+        initSearchHandlers();
     }
-    // Мы на странице формы
+    // 2. Мы на странице формы (form.html)
     else if (document.getElementById('student-form')) {
         if (currentIsu) {
             loadStudentForEdit(currentIsu);
@@ -269,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('btn-save').textContent = 'Сохранить';
         }
     }
-    // Мы на странице досье
+    // 3. Мы на странице досье (dossier.html)
     else if (document.getElementById('dossier-content')) {
         if (currentIsu) {
             loadDossier(currentIsu);
@@ -277,7 +289,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ОБРАБОТЧИКИ СОБЫТИЙ 
+// ==========================================
+// ОБРАБОТЧИКИ СТРОКИ ПОИСКА
+// ==========================================
+
+function initSearchHandlers() {
+    const searchInput = document.getElementById('search-input');
+    const searchClear = document.getElementById('search-clear');
+    
+    if (!searchInput) return;
+    
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', (e) => {
+        const value = e.target.value;
+        
+        // Показываем/скрываем кнопку очистки
+        if (searchClear) {
+            searchClear.style.display = value ? 'block' : 'none';
+        }
+        
+        // Debounce: ждём 300мс после последнего ввода перед запросом
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            loadStudents(currentFilters, 1, value); // Сбрасываем на первую страницу
+        }, 300);
+    });
+    
+    if (searchClear) {
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            searchClear.style.display = 'none';
+            loadStudents(currentFilters, 1, '');
+        });
+    }
+}
+
+// ==========================================
+// ОБРАБОТЧИКИ СОБЫТИЙ (только если элементы есть на странице)
+// ==========================================
 
 // --- Обработчики для index.html ---
 const btnAdd = document.getElementById('btn-add');
@@ -300,12 +350,13 @@ if (tableBody) {
             window.location.href = `dossier.html?isu=${isu}`;
         } else if (action === 'edit') {
             window.location.href = `form.html?isu=${isu}`;
-                } else if (action === 'delete') {
+        } else if (action === 'delete') {
             // Показываем модальное окно
             const modal = document.getElementById('delete-modal');
+            if (!modal) return;
+            
             modal.style.display = 'flex';
             
-            // Обработчики кнопок модального окна
             const confirmBtn = document.getElementById('modal-confirm');
             const cancelBtn = document.getElementById('modal-cancel');
             
@@ -320,7 +371,7 @@ if (tableBody) {
                 modal.style.display = 'none';
                 try {
                     await deleteStudent(isu);
-                    loadStudents(currentFilters, currentPage); // Используем сохраненные фильтры
+                    loadStudents(currentFilters, currentPage, currentSearch);
                 } catch (error) {
                     alert(`Ошибка: ${error.message}`);
                 }
@@ -356,9 +407,9 @@ if (btnApplyFilter) {
         
         const filterCount = Object.keys(filters).length;
         if (filterCount <= 2) {
-            loadStudents(filters);
+            loadStudents(filters, 1, currentSearch); // Сбрасываем на первую страницу, сохраняя поиск
         } else {
-            loadStudentsViaQuery(filters);
+            loadStudentsViaQuery(filters, currentSearch);
         }
     });
 }
@@ -370,7 +421,7 @@ if (btnClearFilter) {
         document.getElementById('filter-dormitory').value = '';
         document.getElementById('filter-room').value = '';
         document.getElementById('filter-foreigner').value = '';
-        loadStudents({});
+        loadStudents({}, 1, currentSearch); // Сбрасываем фильтры, сохраняя поиск
     });
 }
 
@@ -400,6 +451,7 @@ if (studentForm) {
                 await createStudent(studentData);
             }
             
+            // Успешно сохранено -> возвращаемся к списку
             window.location.href = 'index.html';
         } catch (error) {
             let errorMsg = error.message;
@@ -408,6 +460,7 @@ if (studentForm) {
                     const errorData = await error.response.json();
                     errorMsg = extractErrorMessage(errorData);
                 } catch (e) {
+                    // Если не получилось распарсить, оставляем как есть
                 }
             }
             alert(`Ошибка: ${errorMsg}`);

@@ -765,3 +765,54 @@ textarea {
     background: #d0e2b9;
     transform: translateY(-0.0625rem);
 }
+
+/* Строка поиска */
+.search-section {
+    margin-bottom: 1.5rem;
+}
+
+.search-wrapper {
+    position: relative;
+    max-width: 37.5rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 0.0625rem solid #8ca78040;
+    background: var(--field);
+    color: var(--ink);
+    border-radius: 0.5rem;
+    font-size: 0.9375rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 0.1875rem #dac58a15;
+    outline: none;
+}
+
+.search-input::placeholder {
+    color: #819681;
+}
+
+.search-clear {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.125rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: background 0.2s;
+}
+
+.search-clear:hover {
+    background: #ffffff0b;
+    color: var(--ink);
+}
