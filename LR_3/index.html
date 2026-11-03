@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>
+            Лесной архив — студенты общежития
+        </title>
+        <meta name="theme-color" content="#10291f">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div class="forest-scene" aria-hidden="true">
+            <div class="moon">
+            </div>
+            <div class="forest-layer far">
+            </div>
+            <div class="forest-layer near">
+            </div>
+            <div class="fireflies">
+            </div>
+        </div>
+        <header class="site-header">
+            <a class="brand" href="index.html">
+                <span class="brand-mark">
+                    ❧
+                </span>
+                <span>
+                    Лесной архив
+                    <small>
+                        СТУДЕНТЫ ОБЩЕЖИТИЯ
+                    </small>
+                </span>
+            </a>
+            <span class="header-note">
+                Каждому — место под кронами
+            </span>
+            <span class="season">
+                ✦
+                &nbsp;
+                Тёмная ночь..
+            </span>
+        </header>
+        <main class="app-shell">
+            <div id="screen-table">
+                <div class="page-intro">
+                    <span class="eyebrow">
+                        ОБИТАТЕЛИ НАШЕГО ЛЕСА
+                    </span>
+                    <h2>
+                        Здесь начинается
+                        <br>
+                        <em>
+                            история каждого.
+                        </em>
+                    </h2>
+                    <p>
+                        Студенты, их комнаты и маленькие важные подробности — в одном месте.
+                    </p>
+                </div>
+
+                <div class="search-section">
+                    <div class="search-wrapper">
+                        <input type="text" id="search-input" placeholder="Поиск по ФИО или заметкам..." class="search-input">
+                        <button id="search-clear" class="search-clear" style="display: none;">✕</button>
+                    </div>
+                </div>
+                
+                <!-- Секция фильтрации -->
+                <div class="filter-section">
+                    <h3>
+                        <span aria-hidden="true">
+                            ⌕
+                        </span>
+                        Найти среди грибочков
+                    </h3>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="filter-group">
+                                Группа:
+                            </label>
+                            <input type="text" id="filter-group" placeholder="M3301">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-dormitory">
+                                Общежитие:
+                            </label>
+                            <input type="number" id="filter-dormitory" placeholder="8" min="1">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-room">
+                                Комната:
+                            </label>
+                            <input type="number" id="filter-room" placeholder="123" min="1">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-foreigner">
+                                Иностранный:
+                            </label>
+                            <select id="filter-foreigner">
+                                <option value="">
+                                    Все
+                                </option>
+                                <option value="true">
+                                    Да
+                                </option>
+                                <option value="false">
+                                    Нет
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button id="btn-apply-filter">
+                            Применить фильтр
+                        </button>
+                        <button id="btn-clear-filter">
+                            Сбросить
+                        </button>
+                    </div>
+                </div>
+                <div class="list-heading">
+                    <div>
+                        <span class="eyebrow">
+                            ЛЕСНАЯ ЛЕТОПИСЬ
+                        </span>
+                        <h3>
+                            Список грибочков
+                        </h3>
+                    </div>
+                    <button id="btn-add">
+                        ＋ Добавить грибочка
+                    </button>
+                </div>
+                <div class="table-wrapper">
+                    <table id="students-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    ФИО
+                                </th>
+                                <th>
+                                    Группа
+                                </th>
+                                <th>
+                                    ИСУ ID
+                                </th>
+                                <th>
+                                    Общежитие
+                                </th>
+                                <th>
+                                    Комната
+                                </th>
+                                <th>
+                                    Срок заселения
+                                </th>
+                                <th>
+                                    Иностранный
+                                </th>
+                                <th>
+                                    Действия
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-table-body">
+                            <tr>
+                                <td colspan="8" style="text-align: center;">
+                                    Загрузка...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="pagination-controls" class="pagination-controls"></div>
+            </div>
+
+            <!-- Модальное окно подтверждения удаления -->
+            <div id="delete-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <h3>Подтверждение удаления</h3>
+                    <p>Вы уверены, что хотите удалить этого студента?</p>
+                    <p class="modal-warning">Это действие нельзя отменить.</p>
+                    <div class="modal-actions">
+                        <button id="modal-cancel" class="btn-secondary">Отмена</button>
+                        <button id="modal-confirm" class="btn-danger">Удалить</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer class="site-footer">
+            <span>
+                ❧
+                &nbsp;
+                Лесной архив
+            </span>
+            <span>
+                У каждого дерева своя история. У каждого студента — тоже.
+            </span>
+        </footer>
+        <!-- Подключаем новые скрипты -->
+        <script src="api.js">
+        </script>
+        <script src="main.js">
+        </script>
+    </body>
+</html>

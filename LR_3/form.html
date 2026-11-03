@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Форма студента | Общежитие</title>
+    <link rel="icon" type="image/png" href="cat.png">
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+    <!-- Декоративный фон  -->
+    <div class="forest-scene">
+        <div class="moon"></div>
+        <div class="forest-layer far"></div>
+        <div class="forest-layer near"></div>
+        <div class="fireflies"></div>
+    </div>
+
+    <!-- Шапка -->
+    <header class="site-header">
+            <a class="brand" href="index.html">
+                <span class="brand-mark">
+                    ❧
+                </span>
+                <span>
+                    Лесной архив
+                    <small>
+                        СТУДЕНТЫ ОБЩЕЖИТИЯ
+                    </small>
+                </span>
+            </a>
+            <span class="header-note">
+                Каждому — место под кронами
+            </span>
+            <span class="season">
+                ✦
+                &nbsp;
+                Тёмная ночь..
+            </span>
+        </header>
+
+    <!-- Основной контент -->
+    <main class="app-shell compact">
+        <div class="page-intro">
+            <div class="eyebrow">УПРАВЛЕНИЕ ДАННЫМИ</div>
+            <h2>Форма <em>студента</em></h2>
+            <p>Заполните данные для добавления нового резидента или редактирования существующего.</p>
+        </div>
+
+        <form id="student-form">
+            <div class="form-group">
+                <label for="fio">ФИО студента:</label>
+                <input type="text" id="fio" name="fio" required placeholder="Иванов Иван Иванович">
+            </div>
+            <div class="form-group">
+                <label for="group">Группа:</label>
+                <input type="text" id="group" name="group" required placeholder="M3301">
+            </div>
+            <div class="form-group">
+                <label for="isu">ИСУ ID:</label>
+                <input type="text" id="isu" name="isu" required placeholder="676767" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label for="dorm">Номер общежития:</label>
+                <input type="text" id="dorm" name="dorm" placeholder="5" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label for="room">Номер комнаты:</label>
+                <input type="text" id="room" name="room" placeholder="52" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label for="date">Срок заселения:</label>
+                <input type="date" id="date" name="date">
+            </div>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="foreigner" name="foreigner">
+                <label for="foreigner">Иностранный студент</label>
+            </div>
+            <div class="form-group">
+                <label for="notes">Заметки:</label>
+                <textarea id="notes" name="notes" rows="3" placeholder="Любая дополнительная информация" maxlength="200"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" id="btn-save">Сохранить</button>
+                <a href="index.html" id="btn-cancel-form" class="btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </main>
+
+    <!-- Подвал -->
+    <footer class="site-footer">
+            <span>
+                ❧
+                &nbsp;
+                Лесной архив
+            </span>
+            <span>
+                У каждого дерева своя история. У каждого студента — тоже.
+            </span>
+        </footer>
+
+    <script src="api.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

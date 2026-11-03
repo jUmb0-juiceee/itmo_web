@@ -1,0 +1,1222 @@
+[
+  {
+    "isu": 100000,
+    "fio": "Иванов Иван Иванович",
+    "group": "M3301",
+    "dorm": 5,
+    "room": 512,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Староста группы"
+  },
+  {
+    "isu": 100001,
+    "fio": "Петров Пётр Петрович",
+    "group": "M3302",
+    "dorm": 3,
+    "room": 204,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100003,
+    "fio": "Кузнецов Михаил Андреевич",
+    "group": "P3202",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": "Проживает с родителями"
+  },
+  {
+    "isu": 100004,
+    "fio": "Попов Дмитрий Михайлович",
+    "group": "D3301",
+    "dorm": 5,
+    "room": 512,
+    "date": "2023-09-01",
+    "isForeigner": true,
+    "notes": "Citizen of China, needs translation support"
+  },
+  {
+    "isu": 100005,
+    "fio": "Лебедев Николай Николаевич",
+    "group": "M3303",
+    "dorm": 2,
+    "room": 115,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100006,
+    "fio": "Новиков Владимир Владимирович",
+    "group": "M3301",
+    "dorm": 8,
+    "room": 823,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Работает в IT-компании"
+  },
+  {
+    "isu": 100007,
+    "fio": "Морозов Артём Александрович",
+    "group": "M3302",
+    "dorm": 4,
+    "room": 407,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100008,
+    "fio": "Волков Максим Дмитриевич",
+    "group": "P3201",
+    "dorm": 6,
+    "room": 612,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Активист студсовета"
+  },
+  {
+    "isu": 100009,
+    "fio": "Соколов Даниил Алексеевич",
+    "group": "P3202",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100010,
+    "fio": "Михайлов Егор Иванович",
+    "group": "D3301",
+    "dorm": 1,
+    "room": 108,
+    "date": "2024-09-01",
+    "isForeigner": true,
+    "notes": "Иран, специальная программа обмена"
+  },
+  {
+    "isu": 100011,
+    "fio": "Фёдоров Илья Петрович",
+    "group": "M3303",
+    "dorm": 5,
+    "room": 520,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100012,
+    "fio": "Алексеев Кирилл Сергеевич",
+    "group": "M3301",
+    "dorm": 3,
+    "room": 315,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": "Участник олимпиад по программированию"
+  },
+  {
+    "isu": 100013,
+    "fio": "Павлов Матвей Андреевич",
+    "group": "M3302",
+    "dorm": 7,
+    "room": 702,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100014,
+    "fio": "Семёнов Роман Михайлович",
+    "group": "P3201",
+    "dorm": 2,
+    "room": 214,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100015,
+    "fio": "Голубев Тимофей Николаевич",
+    "group": "P3202",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": "Живёт в съёмной квартире"
+  },
+  {
+    "isu": 100016,
+    "fio": "Виноградов Виктор Владимирович",
+    "group": "D3301",
+    "dorm": 8,
+    "room": 831,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100017,
+    "fio": "Богданов Иван Александрович",
+    "group": "M3303",
+    "dorm": 4,
+    "room": 419,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100018,
+    "fio": "Воробьёв Пётр Дмитриевич",
+    "group": "M3301",
+    "dorm": 6,
+    "room": 608,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Нуждается в поддержке куратора"
+  },
+  {
+    "isu": 100019,
+    "fio": "Козлов Алексей Алексеевич",
+    "group": "M3302",
+    "dorm": 5,
+    "room": 525,
+    "date": "2024-09-01",
+    "isForeigner": true,
+    "notes": "Vietnam, English-speaking"
+  },
+  {
+    "isu": 100020,
+    "fio": "Орлов Михаил Иванович",
+    "group": "P3201",
+    "dorm": 1,
+    "room": 112,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100021,
+    "fio": "Макаров Сергей Петрович",
+    "group": "P3202",
+    "dorm": 3,
+    "room": 307,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100022,
+    "fio": "Андреев Дмитрий Сергеевич",
+    "group": "D3301",
+    "dorm": 7,
+    "room": 721,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Староста потока"
+  },
+  {
+    "isu": 100023,
+    "fio": "Ковалёв Николай Андреевич",
+    "group": "M3303",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100024,
+    "fio": "Ильин Владимир Михайлович",
+    "group": "M3301",
+    "dorm": 2,
+    "room": 219,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100025,
+    "fio": "Громов Артём Николаевич",
+    "group": "M3302",
+    "dorm": 8,
+    "room": 814,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Увлекается музыкой"
+  },
+  {
+    "isu": 100026,
+    "fio": "Филиппов Максим Владимирович",
+    "group": "P3201",
+    "dorm": 4,
+    "room": 422,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100027,
+    "fio": "Белов Даниил Александрович",
+    "group": "P3202",
+    "dorm": 5,
+    "room": 530,
+    "date": "2023-09-01",
+    "isForeigner": true,
+    "notes": "Kazakhstan"
+  },
+  {
+    "isu": 100028,
+    "fio": "Тихонов Егор Дмитриевич",
+    "group": "D3301",
+    "dorm": 6,
+    "room": 617,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100029,
+    "fio": "Щербаков Илья Алексеевич",
+    "group": "M3303",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": "Магистратура, живёт отдельно"
+  },
+  {
+    "isu": 100030,
+    "fio": "Самойлов Кирилл Иванович",
+    "group": "M3301",
+    "dorm": 1,
+    "room": 105,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100031,
+    "fio": "Рябов Матвей Петрович",
+    "group": "M3302",
+    "dorm": 3,
+    "room": 311,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": "Капитан сборной по футболу"
+  },
+  {
+    "isu": 100032,
+    "fio": "Поляков Роман Сергеевич",
+    "group": "P3201",
+    "dorm": 7,
+    "room": 709,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100033,
+    "fio": "Воронин Тимофей Андреевич",
+    "group": "P3202",
+    "dorm": 2,
+    "room": 217,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100034,
+    "fio": "Славин Виктор Михайлович",
+    "group": "D3301",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100035,
+    "fio": "Денисов Иван Николаевич",
+    "group": "M3303",
+    "dorm": 8,
+    "room": 826,
+    "date": "2023-09-01",
+    "isForeigner": true,
+    "notes": "Syria, Arabic speaker"
+  },
+  {
+    "isu": 100036,
+    "fio": "Захаров Пётр Владимирович",
+    "group": "M3301",
+    "dorm": 4,
+    "room": 403,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100037,
+    "fio": "Зайцев Алексей Александрович",
+    "group": "M3302",
+    "dorm": 5,
+    "room": 518,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Отличник"
+  },
+  {
+    "isu": 100038,
+    "fio": "Соловьёв Михаил Дмитриевич",
+    "group": "P3201",
+    "dorm": 6,
+    "room": 621,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100039,
+    "fio": "Лукин Сергей Алексеевич",
+    "group": "P3202",
+    "dorm": 1,
+    "room": 119,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100040,
+    "fio": "Кузьмин Николай Иванович",
+    "group": "D3301",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": "Аспирант"
+  },
+  {
+    "isu": 100041,
+    "fio": "Фролов Дмитрий Петрович",
+    "group": "M3303",
+    "dorm": 3,
+    "room": 322,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100042,
+    "fio": "Осипов Владимир Сергеевич",
+    "group": "M3301",
+    "dorm": 7,
+    "room": 714,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100043,
+    "fio": "Нестеров Артём Андреевич",
+    "group": "M3302",
+    "dorm": 2,
+    "room": 208,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": "Занимается волонтёрством"
+  },
+  {
+    "isu": 100044,
+    "fio": "Быков Максим Михайлович",
+    "group": "P3201",
+    "dorm": 8,
+    "room": 819,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100045,
+    "fio": "Титов Даниил Николаевич",
+    "group": "P3202",
+    "dorm": 4,
+    "room": 425,
+    "date": "2022-09-01",
+    "isForeigner": true,
+    "notes": "Turkey"
+  },
+  {
+    "isu": 100046,
+    "fio": "Жуков Егор Владимирович",
+    "group": "D3301",
+    "dorm": 5,
+    "room": 507,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100047,
+    "fio": "Назаров Илья Александрович",
+    "group": "M3303",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100048,
+    "fio": "Калинин Кирилл Дмитриевич",
+    "group": "M3301",
+    "dorm": 6,
+    "room": 613,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": "Участник хакатонов"
+  },
+  {
+    "isu": 100049,
+    "fio": "Анисимов Матвей Алексеевич",
+    "group": "M3302",
+    "dorm": 1,
+    "room": 122,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100050,
+    "fio": "Панин Роман Иванович",
+    "group": "P3201",
+    "dorm": 3,
+    "room": 318,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100051,
+    "fio": "Журавлёв Тимофей Петрович",
+    "group": "P3202",
+    "dorm": 7,
+    "room": 725,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Руководитель клуба дебатов"
+  },
+  {
+    "isu": 100052,
+    "fio": "Никитин Виктор Сергеевич",
+    "group": "D3301",
+    "dorm": 2,
+    "room": 221,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100053,
+    "fio": "Русаков Иван Андреевич",
+    "group": "M3303",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100054,
+    "fio": "Суханов Пётр Михайлович",
+    "group": "M3301",
+    "dorm": 8,
+    "room": 809,
+    "date": "2023-09-01",
+    "isForeigner": true,
+    "notes": "India, Hindi speaker"
+  },
+  {
+    "isu": 100055,
+    "fio": "Молчанов Алексей Николаевич",
+    "group": "M3302",
+    "dorm": 4,
+    "room": 411,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100056,
+    "fio": "Блинов Михаил Владимирович",
+    "group": "P3201",
+    "dorm": 5,
+    "room": 523,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100057,
+    "fio": "Грибов Сергей Александрович",
+    "group": "P3202",
+    "dorm": 6,
+    "room": 605,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": "Имеет публикации"
+  },
+  {
+    "isu": 100058,
+    "fio": "Дмитриев Дмитрий Дмитриевич",
+    "group": "D3301",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100059,
+    "fio": "Егоров Николай Алексеевич",
+    "group": "M3303",
+    "dorm": 1,
+    "room": 116,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100060,
+    "fio": "Давыдов Артём Иванович",
+    "group": "M3301",
+    "dorm": 3,
+    "room": 309,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100061,
+    "fio": "Максимов Максим Петрович",
+    "group": "M3302",
+    "dorm": 7,
+    "room": 717,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Стипендиат правительства"
+  },
+  {
+    "isu": 100062,
+    "fio": "Федотов Даниил Сергеевич",
+    "group": "P3201",
+    "dorm": 2,
+    "room": 212,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100063,
+    "fio": "Киселёв Егор Андреевич",
+    "group": "P3202",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100064,
+    "fio": "Антонов Илья Михайлович",
+    "group": "D3301",
+    "dorm": 8,
+    "room": 822,
+    "date": "2023-09-01",
+    "isForeigner": true,
+    "notes": "Egypt"
+  },
+  {
+    "isu": 100065,
+    "fio": "Тимофеев Кирилл Николаевич",
+    "group": "M3303",
+    "dorm": 4,
+    "room": 416,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100066,
+    "fio": "Баранов Матвей Владимирович",
+    "group": "M3301",
+    "dorm": 5,
+    "room": 514,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100067,
+    "fio": "Сидоров Роман Александрович",
+    "group": "M3302",
+    "dorm": 6,
+    "room": 624,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": "Член научного общества"
+  },
+  {
+    "isu": 100068,
+    "fio": "Герасимов Виктор Дмитриевич",
+    "group": "P3201",
+    "dorm": 1,
+    "room": 109,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100069,
+    "fio": "Пономарёв Иван Алексеевич",
+    "group": "P3202",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100070,
+    "fio": "Медведев Пётр Иванович",
+    "group": "D3301",
+    "dorm": 3,
+    "room": 325,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100071,
+    "fio": "Беляев Алексей Петрович",
+    "group": "M3303",
+    "dorm": 7,
+    "room": 706,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Победитель региональной олимпиады"
+  },
+  {
+    "isu": 100072,
+    "fio": "Григорьев Михаил Сергеевич",
+    "group": "M3301",
+    "dorm": 2,
+    "room": 203,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100073,
+    "fio": "Крылов Сергей Андреевич",
+    "group": "M3302",
+    "dorm": 8,
+    "room": 817,
+    "date": "2023-09-01",
+    "isForeigner": true,
+    "notes": "Belarus"
+  },
+  {
+    "isu": 100074,
+    "fio": "Тихомиров Николай Михайлович",
+    "group": "P3201",
+    "dorm": 4,
+    "room": 428,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100075,
+    "fio": "Степанов Владимир Николаевич",
+    "group": "P3202",
+    "dorm": 5,
+    "room": 511,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Капитан команды КВН"
+  },
+  {
+    "isu": 100076,
+    "fio": "Коновалов Артём Владимирович",
+    "group": "D3301",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100077,
+    "fio": "Ефимов Максим Александрович",
+    "group": "M3303",
+    "dorm": 6,
+    "room": 619,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100078,
+    "fio": "Дорофеев Даниил Дмитриевич",
+    "group": "M3301",
+    "dorm": 1,
+    "room": 125,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100079,
+    "fio": "Одинцов Егор Алексеевич",
+    "group": "M3302",
+    "dorm": 3,
+    "room": 304,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": "Увлекается шахматами"
+  },
+  {
+    "isu": 100080,
+    "fio": "Гусев Илья Иванович",
+    "group": "P3201",
+    "dorm": 7,
+    "room": 723,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100081,
+    "fio": "Терентьев Кирилл Петрович",
+    "group": "P3202",
+    "dorm": 2,
+    "room": 226,
+    "date": "2024-09-01",
+    "isForeigner": true,
+    "notes": "Uzbekistan"
+  },
+  {
+    "isu": 100082,
+    "fio": "Аксёнов Матвей Сергеевич",
+    "group": "D3301",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100083,
+    "fio": "Воронцов Роман Андреевич",
+    "group": "M3303",
+    "dorm": 8,
+    "room": 805,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100084,
+    "fio": "Дьяков Тимофей Михайлович",
+    "group": "M3301",
+    "dorm": 4,
+    "room": 413,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": "Активный участник научной жизни"
+  },
+  {
+    "isu": 100085,
+    "fio": "Князев Виктор Николаевич",
+    "group": "M3302",
+    "dorm": 5,
+    "room": 527,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100086,
+    "fio": "Кудрявцев Иван Владимирович",
+    "group": "P3201",
+    "dorm": 6,
+    "room": 602,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100087,
+    "fio": "Лазарев Пётр Александрович",
+    "group": "P3202",
+    "dorm": 1,
+    "room": 114,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100088,
+    "fio": "Мартынов Алексей Дмитриевич",
+    "group": "D3301",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": "Работает удалённо"
+  },
+  {
+    "isu": 100089,
+    "fio": "Овчинников Михаил Алексеевич",
+    "group": "M3303",
+    "dorm": 3,
+    "room": 316,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100090,
+    "fio": "Савельев Сергей Иванович",
+    "group": "M3301",
+    "dorm": 7,
+    "room": 711,
+    "date": "2023-09-01",
+    "isForeigner": true,
+    "notes": "Kyrgyzstan"
+  },
+  {
+    "isu": 100091,
+    "fio": "Савченко Николай Петрович",
+    "group": "M3302",
+    "dorm": 2,
+    "room": 210,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100092,
+    "fio": "Сорокин Владимир Сергеевич",
+    "group": "P3201",
+    "dorm": 8,
+    "room": 828,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Публикации в Scopus"
+  },
+  {
+    "isu": 100093,
+    "fio": "Ушаков Артём Андреевич",
+    "group": "P3202",
+    "dorm": 4,
+    "room": 420,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100094,
+    "fio": "Харитонов Максим Михайлович",
+    "group": "D3301",
+    "dorm": 5,
+    "room": 509,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100095,
+    "fio": "Цветков Даниил Николаевич",
+    "group": "M3303",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100096,
+    "fio": "Чернов Егор Владимирович",
+    "group": "M3301",
+    "dorm": 6,
+    "room": 615,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": "Старший куратор 1 курса"
+  },
+  {
+    "isu": 100097,
+    "fio": "Шестakov Илья Александрович",
+    "group": "M3302",
+    "dorm": 1,
+    "room": 120,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100098,
+    "fio": "Шульц Кирилл Дмитриевич",
+    "group": "P3201",
+    "dorm": 3,
+    "room": 321,
+    "date": "2022-09-01",
+    "isForeigner": true,
+    "notes": "Germany, Deutsch speaker"
+  },
+  {
+    "isu": 100099,
+    "fio": "Юдин Матвей Алексеевич",
+    "group": "P3202",
+    "dorm": 7,
+    "room": 704,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100100,
+    "fio": "Яковлев Роман Иванович",
+    "group": "D3301",
+    "dorm": 2,
+    "room": 215,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100101,
+    "fio": "Якушев Тимофей Петрович",
+    "group": "M3303",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100102,
+    "fio": "Абрамов Виктор Сергеевич",
+    "group": "M3301",
+    "dorm": 8,
+    "room": 812,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Участник конференции ITMO.NEXT"
+  },
+  {
+    "isu": 100103,
+    "fio": "Булгаков Иван Андреевич",
+    "group": "M3302",
+    "dorm": 4,
+    "room": 405,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100104,
+    "fio": "Германов Пётр Михайлович",
+    "group": "P3201",
+    "dorm": 5,
+    "room": 516,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100105,
+    "fio": "Дорожкин Алексей Николаевич",
+    "group": "P3202",
+    "dorm": 6,
+    "room": 627,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": "Руководитель студенческого клуба"
+  },
+  {
+    "isu": 100106,
+    "fio": "Ермолаев Михаил Владимирович",
+    "group": "D3301",
+    "dorm": 1,
+    "room": 103,
+    "date": "2023-09-01",
+    "isForeigner": true,
+    "notes": "Tajikistan"
+  },
+  {
+    "isu": 100107,
+    "fio": "Жданов Сергей Александрович",
+    "group": "M3303",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100108,
+    "fio": "Зимин Николай Дмитриевич",
+    "group": "M3301",
+    "dorm": 3,
+    "room": 313,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": "Отличник семестра"
+  },
+  {
+    "isu": 100109,
+    "fio": "Игнатьев Артём Алексеевич",
+    "group": "M3302",
+    "dorm": 7,
+    "room": 719,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100110,
+    "fio": "Кабанов Максим Иванович",
+    "group": "P3201",
+    "dorm": 2,
+    "room": 223,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100111,
+    "fio": "Лавров Даниил Петрович",
+    "group": "P3202",
+    "dorm": 8,
+    "room": 807,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": "Стипендиат Президента РФ"
+  },
+  {
+    "isu": 100112,
+    "fio": "Миронов Егор Сергеевич",
+    "group": "D3301",
+    "dorm": 4,
+    "room": 424,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100113,
+    "fio": "Некрасов Илья Андреевич",
+    "group": "M3303",
+    "dorm": 5,
+    "room": 521,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100114,
+    "fio": "Панов Кирилл Михайлович",
+    "group": "M3301",
+    "dorm": null,
+    "room": null,
+    "date": null,
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100115,
+    "fio": "Рогов Матвей Николаевич",
+    "group": "M3302",
+    "dorm": 6,
+    "room": 606,
+    "date": "2024-09-01",
+    "isForeigner": true,
+    "notes": "Moldova"
+  },
+  {
+    "isu": 100116,
+    "fio": "Селезнёв Роман Владимирович",
+    "group": "P3201",
+    "dorm": 1,
+    "room": 117,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100117,
+    "fio": "Сухов Тимофей Александрович",
+    "group": "P3202",
+    "dorm": 3,
+    "room": 302,
+    "date": "2022-09-01",
+    "isForeigner": false,
+    "notes": "Победитель хакатона"
+  },
+  {
+    "isu": 100118,
+    "fio": "Трофимов Виктор Дмитриевич",
+    "group": "D3301",
+    "dorm": 7,
+    "room": 727,
+    "date": "2023-09-01",
+    "isForeigner": false,
+    "notes": ""
+  },
+  {
+    "isu": 100119,
+    "fio": "Устинов Иван Алексеевич",
+    "group": "M3303",
+    "dorm": 2,
+    "room": 206,
+    "date": "2024-09-01",
+    "isForeigner": false,
+    "notes": "Активный участник студенческой жизни"
+  },
+  {
+    "isu": 999999,
+    "fio": "Иванов Иван Иванович",
+    "group": "M3301",
+    "dorm": 5,
+    "room": 52,
+    "date": "2024-09-01",
+    "isForeigner": true,
+    "notes": ""
+  },
+  {
+    "isu": 999998,
+    "fio": "Иванов Иван Иванович",
+    "group": "M3301",
+    "dorm": 5,
+    "room": 52,
+    "date": "2024-09-01",
+    "isForeigner": true,
+    "notes": ""
+  },
+  {
+    "isu": 999997,
+    "fio": "Иванов Иван Антонович",
+    "group": "M3301",
+    "dorm": 5,
+    "room": 53,
+    "date": "2024-09-01",
+    "isForeigner": true,
+    "notes": ""
+  }
+]
