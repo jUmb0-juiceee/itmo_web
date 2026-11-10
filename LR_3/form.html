@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="auth-pending">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -78,7 +78,8 @@
             </div>
             <div class="form-group">
                 <label for="notes">Заметки:</label>
-                <textarea id="notes" name="notes" rows="3" placeholder="Любая дополнительная информация" maxlength="200"></textarea>
+                <textarea id="notes" name="notes" rows="3" placeholder="Любая дополнительная информация" aria-describedby="notes-hint"></textarea>
+                <small id="notes-hint">До 500 символов.</small>
             </div>
             <div class="form-actions">
                 <button type="submit" id="btn-save">Сохранить</button>
@@ -99,6 +100,8 @@
             </span>
         </footer>
 
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
     <script src="api.js"></script>
     <script src="main.js"></script>
 </body>

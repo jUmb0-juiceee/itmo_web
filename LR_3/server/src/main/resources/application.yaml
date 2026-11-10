@@ -1,0 +1,78 @@
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+
+app:
+  import-students:
+    enabled: ${IMPORT_STUDENTS_ENABLED:false}
+    path: ${IMPORT_STUDENTS_PATH:}
+    report: ${IMPORT_STUDENTS_REPORT:}
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: ${JWT_ISSUER:students-server}
+    audience: students-api
+    access-ttl: ${JWT_ACCESS_TTL:15m}
+    refresh-ttl: ${JWT_REFRESH_TTL:7d}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://127.0.0.1:5500,http://localhost:5500}
+  bootstrap-admin:
+    enabled: ${BOOTSTRAP_ADMIN_ENABLED:false}
+    username: ${BOOTSTRAP_ADMIN_USERNAME:}
+    email: ${BOOTSTRAP_ADMIN_EMAIL:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+  rate-limit:
+    max-requests: ${RATE_LIMIT_MAX_REQUESTS:100}
+    window: 60s
+
+spring:
+  application:
+    name: students-server
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/students}
+    username: ${DB_USER:students}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    clean-disabled: true
+  jpa:
+    open-in-view: false
+    properties:
+      eclipselink.target-database: org.eclipse.persistence.platform.database.PostgreSQLPlatform
+      eclipselink.weaving: false
+      eclipselink.ddl-generation: none
+      eclipselink.cache.shared.default: false
+      eclipselink.logging.level: ${JPA_LOG_LEVEL:WARNING}
+      eclipselink.logging.parameters: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+springdoc:
+  remove-broken-reference-definitions: false
+  api-docs:
+    enabled: true
+    version: OPENAPI_3_0
+  swagger-ui:
+    enabled: true
+    disable-swagger-default-url: true
+    persist-authorization: false
+
+logging:
+  level:
+    ru.itmo.students: ${APP_LOG_LEVEL:INFO}

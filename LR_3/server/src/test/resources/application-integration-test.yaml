@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: ${TEST_DB_URL:jdbc:postgresql://localhost:55433/students_it}
+    username: ${TEST_DB_USER:postgres}
+    password: ${TEST_DB_PASSWORD:}
+app:
+  jwt:
+    # Public test-only key. Production must supply JWT_SECRET via environment.
+    secret: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+  rate-limit:
+    max-requests: 10000

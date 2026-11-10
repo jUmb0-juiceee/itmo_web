@@ -10,6 +10,7 @@ function getUrlParam(name) {
 
 // Красивое извлечение текста ошибки из ответа сервера
 function extractErrorMessage(errorData) {
+    if (!errorData) return 'Не удалось выполнить запрос.';
     if (typeof errorData === 'string') return errorData;
     
     if (errorData.details && typeof errorData.details === 'object') {
@@ -36,6 +37,7 @@ const itemsPerPage = 20;
 let currentFilters = {};
 let currentSearch = '';
 let currentUseQuery = false;
+let currentSort = '';
 
 // ==========================================
 // ОТРИСОВКА
@@ -76,8 +78,9 @@ function renderStudents(students) {
                 <td>${safeForeigner}</td>
                 <td class="actions-cell">
                     <button class="action-btn btn-view" title="Посмотреть досье" data-action="view" data-isu="${student.isu}">👁️</button>
+                    ${Auth.isAdmin() ? `
                     <button class="action-btn btn-edit" title="Редактировать" data-action="edit" data-isu="${student.isu}">✏️</button>
-                    <button class="action-btn btn-delete" title="Удалить" data-action="delete" data-isu="${student.isu}">🗑️</button>
+                    <button class="action-btn btn-delete" title="Удалить" data-action="delete" data-isu="${student.isu}">🗑️</button>` : ''}
                 </td>
             </tr>
         `;
@@ -180,7 +183,7 @@ async function loadStudents(filters = {}, page = 1, search = currentSearch) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
     
     try {
-        const result = await fetchStudents(filters, page, itemsPerPage, search);
+        const result = await fetchStudents(filters, page, itemsPerPage, search, currentSort);
         currentPage = result.pagination.page;
         
         renderStudents(result.data);
@@ -190,7 +193,7 @@ async function loadStudents(filters = {}, page = 1, search = currentSearch) {
             <tr>
                 <td colspan="8" class="error-message">
                     <div class="error-icon">⚠️</div>
-                    <div class="error-text">${error.message}</div>
+                    <div class="error-text">${escapeHtml(error.message)}</div>
                     <button class="retry-btn" onclick="reloadCurrentList()">Повторить попытку</button>
                 </td>
             </tr>
@@ -209,14 +212,15 @@ async function loadStudentsViaQuery(filters, search = currentSearch, page = 1) {
     
     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
     try {
-        const response = await fetch(`${API_BASE_URL}/requests`, {
+        const response = await Auth.fetch('/requests', {
             method: 'QUERY', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...filters,
                 search: search,
                 page: page,
-                limit: itemsPerPage
+                limit: itemsPerPage,
+                sort: currentSort
             })
         });
         
@@ -235,7 +239,7 @@ async function loadStudentsViaQuery(filters, search = currentSearch, page = 1) {
             <tr>
                 <td colspan="8" class="error-message">
                     <div class="error-icon">⚠️</div>
-                    <div class="error-text">${error.message}</div>
+                    <div class="error-text">${escapeHtml(error.message)}</div>
                     <button class="retry-btn" onclick="reloadCurrentList()">Повторить попытку</button>
                 </td>
             </tr>
@@ -290,7 +294,7 @@ async function loadDossier(isu) {
         }
         renderDossier(student);
     } catch (error) {
-        contentDiv.innerHTML = `<p style="color:red;">Ошибка: ${error.message}</p>`;
+        contentDiv.innerHTML = `<p style="color:red;">Ошибка: ${escapeHtml(error.message)}</p>`;
     }
 }
 
@@ -298,13 +302,19 @@ async function loadDossier(isu) {
 // ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
 // ==========================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!await Auth.requireSession({ admin: !!document.getElementById('student-form') })) return;
     const currentIsu = getUrlParam('isu');
 
     // 1. Мы на главной странице (index.html)
     if (document.getElementById('students-table-body')) {
         loadStudents({}, 1, '');
         initSearchHandlers();
+        document.getElementById('sort-order').addEventListener('change', event => {
+            currentSort = event.target.value;
+            if (currentUseQuery) loadStudentsViaQuery(currentFilters, currentSearch, 1);
+            else loadStudents(currentFilters, 1, currentSearch);
+        });
     }
     // 2. Мы на странице формы (form.html)
     else if (document.getElementById('student-form')) {
@@ -378,6 +388,7 @@ if (tableBody) {
 
         const action = button.dataset.action;
         const isu = Number(button.dataset.isu);
+        if (action !== 'view' && !Auth.isAdmin()) return;
 
         if (action === 'view') {
             window.location.href = `dossier.html?isu=${isu}`;
@@ -463,6 +474,10 @@ const studentForm = document.getElementById('student-form');
 if (studentForm) {
     studentForm.addEventListener('submit', async function(event) {
         event.preventDefault();
+        if (!Auth.isAdmin()) return;
+        const saveButton = document.getElementById('btn-save');
+        if (saveButton.disabled) return;
+        saveButton.disabled = true;
 
         const studentData = {
             isu: Number(document.getElementById('isu').value),
@@ -497,7 +512,7 @@ if (studentForm) {
                 }
             }
             alert(`Ошибка: ${errorMsg}`);
-        }
+        } finally { saveButton.disabled = false; }
     });
 }
 

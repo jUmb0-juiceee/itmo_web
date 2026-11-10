@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход | Лесной архив</title>
+    <link rel="icon" type="image/png" href="cat.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="forest-scene" aria-hidden="true">
+        <div class="moon"></div><div class="forest-layer far"></div>
+        <div class="forest-layer near"></div><div class="fireflies"></div>
+    </div>
+    <header class="site-header">
+        <a class="brand" href="index.html"><span class="brand-mark">❧</span>
+            <span>Лесной архив<small>СТУДЕНТЫ ОБЩЕЖИТИЯ</small></span></a>
+        <span class="header-note">Каждому — место под кронами</span>
+    </header>
+    <main class="app-shell compact auth-shell">
+        <div class="page-intro">
+            <div class="eyebrow">ДОБРО ПОЖАЛОВАТЬ</div>
+            <h2 id="auth-title">Вход <em>в архив</em></h2>
+            <p id="auth-description">Войдите, чтобы открыть список студентов.</p>
+        </div>
+        <p id="auth-notice" class="auth-notice" role="status" hidden></p>
+        <form id="auth-form">
+            <div class="form-group"><label for="username">Имя пользователя:</label>
+                <input id="username" name="username" autocomplete="username" maxlength="64" required></div>
+            <div id="email-group" class="form-group" hidden><label for="email">Электронная почта:</label>
+                <input id="email" name="email" type="email" autocomplete="email" maxlength="254" disabled></div>
+            <div class="form-group"><label for="password">Пароль:</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required>
+                <small id="password-hint" hidden>Минимум 8 символов, максимум 72 байта UTF-8.</small></div>
+            <p id="auth-error" class="auth-error" role="alert" hidden></p>
+            <div class="form-actions">
+                <button id="auth-submit" type="submit">Войти</button>
+                <button id="auth-toggle" type="button" class="btn-secondary">Создать аккаунт</button>
+            </div>
+        </form>
+    </main>
+    <footer class="site-footer"><span>❧ Лесной архив</span><span>У каждого студента своя история.</span></footer>
+    <script src="config.js"></script><script src="auth.js"></script><script src="login.js"></script>
+</body>
+</html>

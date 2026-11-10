@@ -1,5 +1,5 @@
 // api.js
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = window.APP_CONFIG.apiBaseUrl;
 
 // ==========================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -23,6 +23,7 @@ function escapeHtml(text) {
 
 // Универсальная функция для извлечения текста ошибки из JSON-ответа сервера
 function extractErrorMessage(errorData) {
+    if (!errorData) return 'Не удалось выполнить запрос.';
     if (typeof errorData === 'string') return errorData;
     
     if (errorData.details && typeof errorData.details === 'object') {
@@ -51,7 +52,7 @@ function extractErrorMessage(errorData) {
 
 // Функция для определения типа ошибки и возврата понятного сообщения (сеть, таймаут и т.д.)
 function getErrorMessage(error) {
-    // Ошибка сети (нет интернета или сервер Django не запущен)
+    // Ошибка соединения с Java API.
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
         return 'Не удалось подключиться к серверу. Проверьте подключение к интернету или убедитесь, что бэкенд запущен.';
     }
@@ -74,12 +75,13 @@ function getErrorMessage(error) {
 // API ФУНКЦИИ
 // ==========================================
 
-async function fetchStudents(filters = {}, page = 1, limit = 20, search = '') {
+async function fetchStudents(filters = {}, page = 1, limit = 20, search = '', sort = '') {
     const params = new URLSearchParams();
     
     // Добавляем параметры пагинации
     params.append('page', page);
     params.append('limit', limit);
+    if (sort) params.append('sort', sort);
     
     // Добавляем поиск
     if (search && search.trim()) {
@@ -94,7 +96,7 @@ async function fetchStudents(filters = {}, page = 1, limit = 20, search = '') {
     }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/requests?${params.toString()}`);
+        const response = await Auth.fetch(`/requests?${params.toString()}`);
         
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -109,7 +111,7 @@ async function fetchStudents(filters = {}, page = 1, limit = 20, search = '') {
 
 async function fetchStudent(isu) {
     try {
-        const response = await fetch(`${API_BASE_URL}/requests/${isu}`);
+        const response = await Auth.fetch(`/requests/${isu}`);
         
         if (response.status === 404) return null;
         
@@ -126,7 +128,7 @@ async function fetchStudent(isu) {
 
 async function createStudent(studentData) {
     try {
-        const response = await fetch(`${API_BASE_URL}/requests`, {
+        const response = await Auth.fetch('/requests', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(studentData)
@@ -145,7 +147,7 @@ async function createStudent(studentData) {
 
 async function updateStudent(isu, studentData) {
     try {
-        const response = await fetch(`${API_BASE_URL}/requests/${isu}`, {
+        const response = await Auth.fetch(`/requests/${isu}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(studentData)
@@ -164,7 +166,7 @@ async function updateStudent(isu, studentData) {
 
 async function deleteStudent(isu) {
     try {
-        const response = await fetch(`${API_BASE_URL}/requests/${isu}`, {
+        const response = await Auth.fetch(`/requests/${isu}`, {
             method: 'DELETE'
         });
         

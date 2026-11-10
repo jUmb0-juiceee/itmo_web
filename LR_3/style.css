@@ -12,6 +12,28 @@
     --green: #bad39b;
 }
 
+[hidden] { display: none !important; }
+.auth-pending .app-shell { visibility: hidden; }
+.session-bar {
+    width: min(74rem, calc(100% - 2rem));
+    margin: 0 auto 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    color: var(--muted);
+}
+.session-bar button { padding: .45rem 1rem; }
+.app-shell.auth-shell { max-width: 36rem; }
+#auth-form { display: grid; gap: 1.2rem; }
+#auth-form .form-group { width: 100%; }
+.auth-error { color: #ffc1b4; white-space: pre-line; }
+.auth-notice { color: var(--gold); }
+.sort-control { display: grid; gap: .3rem; color: var(--muted); font-size: .85rem; }
+.sort-control select { min-width: 12rem; }
+button:disabled { opacity: .6; cursor: wait; }
+
 * {
     box-sizing: border-box;
 }

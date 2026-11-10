@@ -1,0 +1,564 @@
+openapi: 3.0.3
+info:
+  title: Лесной архив — API лабораторной 3
+  version: 0.1.0
+  description: |
+    Spring Boot + EclipseLink/JPA + PostgreSQL. Регистрация создаёт USER;
+    USER читает студентов, ADMIN также изменяет данные.
+
+    Для проверки защищённых методов выполните login, скопируйте accessToken
+    и нажмите Authorize. Вставляйте только токен, без префикса Bearer.
+    Refresh передаётся в JSON-теле, обновляется при каждом использовании.
+
+    Нестандартный QUERY /api/requests использует JSON с теми же критериями,
+    что GET. В OpenAPI 3.0 он описан расширением x-query, а не фиктивным POST.
+    Swagger UI не выполняет QUERY: используйте подготовленную коллекцию Postman.
+    Выход отзывает refresh; выданный access действует до своего истечения.
+    Неподдерживаемый HTTP-метод даёт 405, формат ответа — 406, тип тела — 415;
+    ошибки имеют ту же схему ApiError.
+servers:
+  - url: /
+    description: Текущий сервер
+tags:
+  - name: Авторизация
+    description: Регистрация, вход, обновление токенов и выход
+  - name: Студенты
+    description: USER/ADMIN читают, только ADMIN изменяет
+  - name: Состояние
+security:
+  - bearerAuth: []
+paths:
+  /api/auth/register:
+    post:
+      tags: [Авторизация]
+      operationId: register
+      summary: Создать аккаунт USER
+      description: Имя и email уникальны без учёта регистра. Поле role не назначает права. После регистрации выполните login.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RegistrationRequest'}
+      responses:
+        '201':
+          description: Пользователь создан, пароль и хеш не возвращаются
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UserResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/auth/login:
+    post:
+      tags: [Авторизация]
+      operationId: login
+      summary: Войти и получить access/refresh JWT
+      description: Имя проверяется без учёта регистра. Неверное имя или пароль дают одинаковый ответ 401. Не передавайте старый Bearer в этот метод.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LoginRequest'}
+      responses:
+        '200':
+          description: Токены выданы, Cache-Control no-store
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TokenResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/auth/refresh:
+    post:
+      tags: [Авторизация]
+      operationId: refresh
+      summary: Обновить пару токенов
+      description: |
+        Принимает только refresh JWT. Успешное обновление отзывает старый refresh.
+        Сохраните оба новых токена. Повторное использование старого даёт 401.
+        При параллельных запросах с одним refresh успешно проходит только один.
+        Access-токен в Authorization не нужен.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RefreshRequest'}
+      responses:
+        '200':
+          description: Новая пара, Cache-Control no-store
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TokenResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/auth/logout:
+    post:
+      tags: [Авторизация]
+      operationId: logout
+      summary: Отозвать текущий refresh-токен
+      description: Не отзывает другие сеансы и ещё не истёкшие access-токены. Передайте последний refresh после ротации, без Bearer.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RefreshRequest'}
+      responses:
+        '204': {description: Refresh отозван, тела ответа нет}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/auth/me:
+    get:
+      tags: [Авторизация]
+      operationId: currentUser
+      summary: Получить текущего пользователя и актуальную роль
+      responses:
+        '200':
+          description: Пользователь из БД, Cache-Control no-store
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UserResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/requests:
+    get:
+      tags: [Студенты]
+      operationId: listStudents
+      summary: Список, поиск, фильтры, сортировка и страницы
+      description: |
+        Доступ USER и ADMIN. Фильтры комбинируются через AND; search ищет
+        подстроку в ФИО ИЛИ заметках без учёта регистра. %, _ и обратная косая
+        черта считаются обычными символами поиска.
+        Нумерация страниц от 1. Пустая выборка имеет total_pages=0.
+        По умолчанию порядок добавления; при равенстве сортировки используется id ASC.
+
+        Эквивалентный QUERY /api/requests принимает JSON, например:
+        {"page":1,"limit":20,"search":"Иванов","group":"M3301","isForeigner":false,"sort":"fio,asc"}.
+        Для выполнения QUERY используйте коллекцию Postman.
+      parameters:
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Limit'}
+        - {$ref: '#/components/parameters/Search'}
+        - {$ref: '#/components/parameters/Group'}
+        - {$ref: '#/components/parameters/Dorm'}
+        - {$ref: '#/components/parameters/Room'}
+        - {$ref: '#/components/parameters/Foreigner'}
+        - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Страница студентов; выход за последнюю страницу возвращает пустой data
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StudentPageResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+    post:
+      tags: [Студенты]
+      operationId: createStudent
+      summary: Создать студента — ADMIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StudentWriteRequest'}
+      responses:
+        '201':
+          description: Созданный студент
+          headers:
+            Location:
+              description: Путь к созданной записи
+              schema: {type: string, example: /api/requests/123456}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StudentResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+    options:
+      tags: [Студенты]
+      operationId: studentMethods
+      summary: Разрешённые методы списка
+      description: Обычный OPTIONS возвращает 204; браузерный CORS preflight обрабатывается фильтром и возвращает 200.
+      security: []
+      responses:
+        '204':
+          description: Методы ресурса
+          headers:
+            Allow:
+              schema: {type: string, example: 'GET, HEAD, POST, QUERY, OPTIONS'}
+        '200': {description: Успешный CORS preflight разрешённого origin}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    x-query:
+      operationId: queryStudents
+      summary: QUERY /api/requests — USER или ADMIN
+      description: Нестандартный HTTP-метод; поля JSON эквивалентны параметрам GET. Выполняется из Postman, не из Swagger UI.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StudentQueryRequest'}
+      responses:
+        '200':
+          description: Страница студентов
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StudentPageResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/requests/{isu}:
+    parameters:
+      - name: isu
+        in: path
+        required: true
+        description: Текущий ИСУ студента. После смены ИСУ используйте новый адрес.
+        schema: {type: integer, format: int32, example: 123456}
+    get:
+      tags: [Студенты]
+      operationId: getStudent
+      summary: Досье студента — USER или ADMIN
+      responses:
+        '200':
+          description: Студент; внутренний id таблицы не возвращается
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StudentResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+    put:
+      tags: [Студенты]
+      operationId: replaceStudent
+      summary: Полностью заменить студента — ADMIN
+      description: |
+        isu, fio и group обязательны. Пропущенные необязательные поля сбрасываются
+        к значениям по умолчанию. Можно изменить ИСУ. Не создаёт запись при отсутствии — возвращает 404.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StudentWriteRequest'}
+      responses:
+        '200':
+          description: Обновлённый студент
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StudentResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+    patch:
+      tags: [Студенты]
+      operationId: patchStudent
+      summary: Изменить переданные поля — ADMIN
+      description: |
+        Пропуск сохраняет поле, явный null очищает необязательное поле.
+        Проверяется итоговая запись. Общежитие, комната и дата либо заполнены
+        вместе, либо все null. null для обязательного поля даёт 422.
+        Неизвестные поля игнорируются.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StudentPatchRequest'}
+            examples:
+              notes: {summary: Изменить заметку, value: {notes: Новая заметка}}
+              clearSettlement: {summary: Очистить заселение, value: {dorm: null, room: null, date: null}}
+      responses:
+        '200':
+          description: Обновлённый студент
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StudentResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+    delete:
+      tags: [Студенты]
+      operationId: deleteStudent
+      summary: Удалить студента — ADMIN
+      responses:
+        '204': {description: Запись удалена, тела ответа нет}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /actuator/health:
+    get:
+      tags: [Состояние]
+      operationId: health
+      summary: Проверить приложение и соединение с PostgreSQL
+      security: []
+      responses:
+        '200':
+          description: Приложение готово, детали подключения скрыты
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: {type: string, example: UP}
+        '503': {description: Приложение или БД не готовы}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access JWT из login/refresh. В Authorize вставьте токен без слова Bearer.
+  parameters:
+    Page:
+      name: page
+      in: query
+      description: Номер от 1. Неположительный заменяется на 1; если page/limit не разобраны, оба сбрасываются к 1/20.
+      schema: {type: integer, minimum: 1, default: 1}
+    Limit:
+      name: limit
+      in: query
+      description: Размер страницы; значение вне 1–100 заменяется на 20.
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+    Search:
+      name: search
+      in: query
+      description: Подстрока ФИО или заметок, без учёта регистра; пробелы по краям удаляются.
+      schema: {type: string, example: Иванов}
+    Group:
+      name: group
+      in: query
+      schema: {type: string, pattern: '^[A-Z][0-9]{4}$', example: M3301}
+    Dorm:
+      name: dorm
+      in: query
+      schema: {type: integer, minimum: 1, example: 1}
+    Room:
+      name: room
+      in: query
+      schema: {type: integer, minimum: 1, example: 101}
+    Foreigner:
+      name: isForeigner
+      in: query
+      schema: {type: boolean, example: false}
+    Sort:
+      name: sort
+      in: query
+      description: Поле и направление asc/desc. Поля isu, fio, group, dorm, room, date, isForeigner, notes; пустое значение — порядок добавления.
+      schema:
+        type: string
+        pattern: '^$|^(isu|fio|group|dorm|room|date|isForeigner|notes),(asc|desc)$'
+        example: fio,asc
+  schemas:
+    StudentWriteRequest:
+      type: object
+      required: [isu, fio, group]
+      description: |
+        Для POST/PUT. Необязательные поля получают значения по умолчанию.
+        Числовые строки и строки true/false принимаются для совместимости;
+        канонические JSON-типы показаны в схеме. Пробелы строк удаляются по краям.
+        dorm/room/date либо все заполнены, либо все null.
+      properties:
+        isu: {type: integer, minimum: 100000, maximum: 999999, example: 123456}
+        fio:
+          type: string
+          maxLength: 150
+          pattern: '^[А-ЯЁ][а-яё\-]+ [А-ЯЁ][а-яё\-]+ [А-ЯЁ][а-яё\-]+$'
+          example: Иванов Иван Иванович
+        group: {type: string, maxLength: 10, pattern: '^[A-Z][0-9]{4}$', example: M3301}
+        dorm: {type: integer, nullable: true, minimum: 1, maximum: 999, example: 1}
+        room: {type: integer, nullable: true, minimum: 1, maximum: 9999, example: 101}
+        date: {type: string, format: date, nullable: true, description: Год от 2000 до 9999, example: '2026-09-01'}
+        isForeigner: {type: boolean, nullable: true, default: false}
+        notes: {type: string, nullable: true, maxLength: 500, default: '', description: До 500 Unicode-символов; null превращается в пустую строку.}
+    StudentPatchRequest:
+      type: object
+      description: Все поля необязательны; явный null допустим только для необязательных полей. Проверяется итоговое состояние.
+      properties:
+        isu: {type: integer, minimum: 100000, maximum: 999999}
+        fio: {type: string, maxLength: 150, example: Иванов Иван Иванович}
+        group: {type: string, pattern: '^[A-Z][0-9]{4}$'}
+        dorm: {type: integer, nullable: true, minimum: 1, maximum: 999}
+        room: {type: integer, nullable: true, minimum: 1, maximum: 9999}
+        date: {type: string, format: date, nullable: true, description: Год от 2000 до 9999}
+        isForeigner: {type: boolean, nullable: true}
+        notes: {type: string, nullable: true, maxLength: 500}
+    StudentResponse:
+      type: object
+      required: [isu, fio, group, dorm, room, date, isForeigner, notes]
+      properties:
+        isu: {type: integer, example: 123456}
+        fio: {type: string, example: Иванов Иван Иванович}
+        group: {type: string, example: M3301}
+        dorm: {type: integer, nullable: true, example: 1}
+        room: {type: integer, nullable: true, example: 101}
+        date: {type: string, format: date, nullable: true, example: '2026-09-01'}
+        isForeigner: {type: boolean, example: false}
+        notes: {type: string, example: Заметка}
+    StudentQueryRequest:
+      type: object
+      description: Плоский объект критериев QUERY. Неизвестные поля игнорируются.
+      properties:
+        page: {type: integer, default: 1}
+        limit: {type: integer, minimum: 1, maximum: 100, default: 20}
+        search: {type: string, nullable: true, example: Иванов}
+        group: {type: string, nullable: true, example: M3301}
+        dorm: {type: integer, nullable: true, minimum: 1}
+        room: {type: integer, nullable: true, minimum: 1}
+        isForeigner: {type: boolean, nullable: true}
+        sort: {type: string, nullable: true, example: 'fio,asc'}
+    StudentPageResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items: {$ref: '#/components/schemas/StudentResponse'}
+        pagination: {$ref: '#/components/schemas/PaginationResponse'}
+    PaginationResponse:
+      type: object
+      required: [page, limit, total, total_pages, has_next, has_prev]
+      properties:
+        page: {type: integer, example: 1}
+        limit: {type: integer, example: 20}
+        total: {type: integer, format: int64, example: 1}
+        total_pages: {type: integer, format: int64, example: 1}
+        has_next: {type: boolean, example: false}
+        has_prev: {type: boolean, example: false}
+    RegistrationRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username: {type: string, minLength: 3, maxLength: 64, pattern: '^[A-Za-z0-9_][A-Za-z0-9_.-]*$', example: reader_demo}
+        email: {type: string, format: email, maxLength: 254, example: reader@example.org}
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          minLength: 8
+          maxLength: 72
+          description: От 8 Unicode-символов, максимум 72 байта UTF-8; пароль не обрезается.
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: {type: string, minLength: 1, maxLength: 64, example: reader_demo}
+        password: {type: string, format: password, writeOnly: true, minLength: 1, maxLength: 72}
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: {type: string, minLength: 1, maxLength: 8192, writeOnly: true, description: Последний refresh JWT из login/refresh}
+    UserResponse:
+      type: object
+      required: [id, username, email, role]
+      properties:
+        id: {type: integer, format: int64, example: 1}
+        username: {type: string, example: reader_demo}
+        email: {type: string, format: email, example: reader@example.org}
+        role: {type: string, enum: [ADMIN, USER], example: USER}
+    TokenResponse:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresIn, refreshExpiresIn, user]
+      properties:
+        accessToken: {type: string, description: Подписанный access JWT}
+        refreshToken: {type: string, description: Подписанный refresh JWT, заменяется после каждого обновления}
+        tokenType: {type: string, enum: [Bearer]}
+        expiresIn: {type: integer, format: int64, example: 900, description: Срок access в секундах}
+        refreshExpiresIn: {type: integer, format: int64, example: 604800, description: Срок refresh в секундах}
+        user: {$ref: '#/components/schemas/UserResponse'}
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error: {type: string, example: Ошибка валидации}
+        details:
+          type: object
+          additionalProperties:
+            oneOf:
+              - {type: string}
+              - {type: integer}
+          example: {isu: ИСУ ID должен состоять ровно из 6 цифр.}
+  responses:
+    BadRequest:
+      description: Некорректный JSON, параметры запроса или отсутствие обязательных полей POST/PUT
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    Unauthorized:
+      description: Нет действительной авторизации, неверные данные входа, недействительный/истёкший/отозванный токен
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    Forbidden:
+      description: Недостаточно прав либо origin не разрешён CORS
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    NotFound:
+      description: Студент не найден
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    Conflict:
+      description: Занят ИСУ, username или email
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    ValidationError:
+      description: Ошибки типов/значений/совместного заполнения; details содержит сообщения по полям
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    TooManyRequests:
+      description: Превышен общий лимит допущенных API-запросов с IP за последние 60 секунд
+      headers:
+        Retry-After:
+          schema: {type: integer, minimum: 1}
+          description: Время ожидания в секундах
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}
+    ServerError:
+      description: Внутренняя ошибка; SQL и стектрейс не публикуются
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ApiError'}

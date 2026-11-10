@@ -1,0 +1,29 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+/.runtime/
+/server/docs/postman/local.postman_environment.json
+
+# Build output and downloaded tools
+/server/target/
+/.tools/
+/node_modules/
+/test-results/
+/playwright-report/
+
+# Local IDE settings
+/server/.idea/
+/server/.settings/
+/server/.classpath
+/server/.project
+
+# Legacy Django environment, local databases and Python caches
+/venv/
+/.venv/
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+__pycache__/
+*.py[cod]

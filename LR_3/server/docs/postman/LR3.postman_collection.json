@@ -1,0 +1,1327 @@
+{
+  "info": {
+    "name": "ЛР 3 — студенты, JWT и роли",
+    "_postman_id": "1ed7144d-d93c-4992-84bf-5613f9255685",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Импортируйте окружение local.postman_environment.example.json, задайте адрес и существующего ADMIN. Запускайте папки по порядку на демонстрационной БД. Коллекция создаёт новый USER и одного студента; студент удаляется в конце, аккаунт USER остаётся. Токены сохраняются автоматически и очищаются последним запросом. QUERY — настоящий нестандартный HTTP-метод."
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (pm.response.code >= 400) pm.test('Единый формат ошибки', () => pm.expect(pm.response.json().error).to.be.a('string'));"
+        ]
+      }
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "1. Подготовка и пользователи",
+      "item": [
+        {
+          "name": "01. Состояние сервера и подготовка демонстрации",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/health",
+            "description": "Ожидаемый результат: HTTP 200."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const runId = Date.now() + '_' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "pm.environment.set('runId', runId);",
+                  "pm.environment.set('demoUsername', 'lab3_demo_' + runId);",
+                  "pm.environment.set('demoEmail', 'lab3_demo_' + runId + '@example.org');",
+                  "pm.environment.set('demoPassword', pm.variables.replaceIn('{{$guid}}') + 'Aa1!');",
+                  "const isu = Math.floor(100000 + Math.random() * 799998);",
+                  "pm.environment.set('studentIsu', isu);",
+                  "pm.environment.set('updatedIsu', isu + 1);",
+                  "['createdStudentIsu','adminAccessToken','adminRefreshToken','userAccessToken','userRefreshToken','previousUserRefreshToken'].forEach(key => pm.environment.set(key, ''));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Приложение готово\", () => { pm.expect(pm.response.json().status).to.eql('UP'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Вход ADMIN",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Ожидаемый результат: HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('adminUsername') || !pm.environment.get('adminPassword')) {",
+                  "  pm.execution.setNextRequest(null);",
+                  "  throw new Error('Выберите окружение и задайте adminUsername/adminPassword существующего ADMIN.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const pair = pm.response.json();",
+                  "  pm.environment.set('adminAccessToken', pair.accessToken);",
+                  "  pm.environment.set('adminRefreshToken', pair.refreshToken);",
+                  "}",
+                  "pm.test(\"Пара токенов и no-store\", () => { pm.expect(pm.response.json()).to.include.keys('accessToken','refreshToken','user'); pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'); });",
+                  "pm.test(\"Роль ADMIN\", () => { pm.expect(pm.response.json().user.role).to.eql('ADMIN'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03. Регистрация — роль ADMIN из тела игнорируется",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "Ожидаемый результат: HTTP 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{demoUsername}}\",\n  \"email\": \"{{demoEmail}}\",\n  \"password\": \"{{demoPassword}}\",\n  \"role\": \"ADMIN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Создан USER без пароля и хеша в ответе\", () => { const user = pm.response.json(); pm.expect(user.role).to.eql('USER'); pm.expect(user).not.to.have.property('password'); pm.expect(user).not.to.have.property('passwordHash'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04. Вход USER",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Ожидаемый результат: HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{demoUsername}}\",\n  \"password\": \"{{demoPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const pair = pm.response.json();",
+                  "  pm.environment.set('userAccessToken', pair.accessToken);",
+                  "  pm.environment.set('userRefreshToken', pair.refreshToken);",
+                  "}",
+                  "pm.test(\"Пара токенов и no-store\", () => { pm.expect(pm.response.json()).to.include.keys('accessToken','refreshToken','user'); pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05. Текущий пользователь USER",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Ожидаемый результат: HTTP 200."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Роль USER\", () => { pm.expect(pm.response.json().role).to.eql('USER'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Студенты и права",
+      "item": [
+        {
+          "name": "06. Создать студента от ADMIN",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests",
+            "description": "Создаёт новую демонстрационную запись. При конфликте ИСУ выполнение останавливается: существующие записи не изменяются.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isu\": {{studentIsu}},\n  \"fio\": \"Иванов Иван Иванович\",\n  \"group\": \"M3301\",\n  \"dorm\": 1,\n  \"room\": 101,\n  \"date\": \"2026-09-01\",\n  \"isForeigner\": false,\n  \"notes\": \"Коллекция {{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.environment.set('createdStudentIsu', pm.response.json().isu);",
+                  "else pm.execution.setNextRequest(null);",
+                  "pm.test(\"ИСУ и Location\", () => { pm.expect(pm.response.json().isu).to.eql(Number(pm.environment.get('studentIsu'))); pm.expect(pm.response.headers.get('Location')).to.include('/api/requests/'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07. USER — поиск, фильтры, сортировка и страница",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests?page=1&limit=1&search={{runId}}&group=M3301&dorm=1&isForeigner=false&sort=isu,asc",
+            "description": "Ожидаемый результат: HTTP 200."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Страница демонстрационного студента\", () => { const page = pm.response.json(); pm.expect(page.data).to.have.lengthOf(1); pm.expect(page.data[0].isu).to.eql(Number(pm.environment.get('createdStudentIsu'))); pm.expect(page.pagination).to.include({page:1,limit:1,total:1,total_pages:1,has_next:false,has_prev:false}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08. USER — досье",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "description": "Ожидаемый результат: HTTP 200."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Внешний контракт студента\", () => { pm.expect(pm.response.json()).to.include.keys('isu','fio','group','dorm','room','date','isForeigner','notes'); pm.expect(pm.response.json()).not.to.have.property('id'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09. USER — нестандартный QUERY с JSON",
+          "request": {
+            "method": "QUERY",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests",
+            "description": "Ожидаемый результат: HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 1,\n  \"limit\": 20,\n  \"search\": \"{{runId}}\",\n  \"group\": \"M3301\",\n  \"dorm\": 1,\n  \"room\": 101,\n  \"isForeigner\": false,\n  \"sort\": \"fio,asc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"QUERY возвращает ту же запись\", () => { pm.expect(pm.response.json().pagination.total).to.eql(1); pm.expect(pm.response.json().data[0].isu).to.eql(Number(pm.environment.get('createdStudentIsu'))); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10. USER не может создавать",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests",
+            "description": "Ожидаемый результат: HTTP 403.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isu\": {{studentIsu}},\n  \"fio\": \"Иванов Иван Иванович\",\n  \"group\": \"M3301\",\n  \"dorm\": 1,\n  \"room\": 101,\n  \"date\": \"2026-09-01\",\n  \"isForeigner\": false,\n  \"notes\": \"Коллекция {{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11. USER не может полностью изменять",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "description": "Ожидаемый результат: HTTP 403.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isu\": {{studentIsu}},\n  \"fio\": \"Иванов Иван Иванович\",\n  \"group\": \"M3301\",\n  \"dorm\": 1,\n  \"room\": 101,\n  \"date\": \"2026-09-01\",\n  \"isForeigner\": false,\n  \"notes\": \"Коллекция {{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12. USER не может частично изменять",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "description": "Ожидаемый результат: HTTP 403.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Запрещённое изменение\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13. USER не может удалять",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "description": "Ожидаемый результат: HTTP 403."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "14. ADMIN — частичное изменение",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "description": "Ожидаемый результат: HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"PATCH {{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Изменена заметка, заселение сохранено\", () => { pm.expect(pm.response.json().notes).to.eql('PATCH ' + pm.environment.get('runId')); pm.expect(pm.response.json().room).to.eql(101); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "15. ADMIN — некорректный PATCH отклоняется",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "description": "Ожидаемый результат: HTTP 422.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "pm.test(\"Ошибка связанных полей\", () => { pm.expect(pm.response.json().details).to.have.property('non_field_errors'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "16. После ошибки PATCH данные прежние",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "description": "Ожидаемый результат: HTTP 200."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Заселение не повреждено\", () => { pm.expect(pm.response.json().room).to.eql(101); pm.expect(pm.response.json().notes).to.eql('PATCH ' + pm.environment.get('runId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "17. ADMIN — PUT меняет ИСУ и сбрасывает необязательные поля",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "description": "Ожидаемый результат: HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isu\": {{updatedIsu}},\n  \"fio\": \"Петров Пётр Петрович\",\n  \"group\": \"M3302\",\n  \"notes\": \"PUT {{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.environment.set('createdStudentIsu', pm.response.json().isu);",
+                  "pm.test(\"Полная замена\", () => { const s=pm.response.json(); pm.expect(s.isu).to.eql(Number(pm.environment.get('updatedIsu'))); pm.expect(s.dorm).to.eql(null); pm.expect(s.room).to.eql(null); pm.expect(s.date).to.eql(null); pm.expect(s.isForeigner).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "18. Старый ИСУ больше не найден",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{studentIsu}}",
+            "description": "Ожидаемый результат: HTTP 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "19. Дубликат ИСУ отклоняется",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests",
+            "description": "Ожидаемый результат: HTTP 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isu\": {{createdStudentIsu}},\n  \"fio\": \"Иванов Иван Иванович\",\n  \"group\": \"M3301\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "pm.test(\"Конфликт ИСУ\", () => { pm.expect(pm.response.json().details).to.have.property('isu'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Обновление токенов, удаление и выход",
+      "item": [
+        {
+          "name": "20. Обновить пару USER",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "description": "Ожидаемый результат: HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{userRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('previousUserRefreshToken', pm.environment.get('userRefreshToken'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const pair = pm.response.json();",
+                  "  pm.environment.set('userAccessToken', pair.accessToken);",
+                  "  pm.environment.set('userRefreshToken', pair.refreshToken);",
+                  "}",
+                  "pm.test(\"Пара токенов и no-store\", () => { pm.expect(pm.response.json()).to.include.keys('accessToken','refreshToken','user'); pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'); });",
+                  "pm.test(\"Refresh заменён\", () => { pm.expect(pm.environment.get('userRefreshToken')).not.to.eql(pm.environment.get('previousUserRefreshToken')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "21. Старый refresh больше не работает",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "description": "Ожидаемый результат: HTTP 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{previousUserRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "22. Access нельзя использовать вместо refresh",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "description": "Ожидаемый результат: HTTP 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{userAccessToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "23. Новый access USER работает",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Ожидаемый результат: HTTP 200."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"USER после обновления\", () => { pm.expect(pm.response.json().role).to.eql('USER'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "24. Анонимному посетителю данные недоступны",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests",
+            "description": "Ожидаемый результат: HTTP 401."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "25. ADMIN удаляет созданную запись",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "description": "Ожидаемый результат: HTTP 204."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+                  "pm.test(\"Нет тела ответа\", () => { pm.expect(pm.response.text()).to.eql(''); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "26. Удалённый студент не найден",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "description": "Ожидаемый результат: HTTP 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "27. Выход USER",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "Ожидаемый результат: HTTP 204.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{userRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "28. Refresh после выхода отклоняется",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "description": "Ожидаемый результат: HTTP 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{userRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "29. Выход ADMIN",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "Ожидаемый результат: HTTP 204.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{adminRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "30. Завершение и очистка переменных токенов",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/health",
+            "description": "Ожидаемый результат: HTTP 200."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "['adminAccessToken','adminRefreshToken','userAccessToken','userRefreshToken','previousUserRefreshToken','demoPassword','createdStudentIsu'].forEach(key => pm.environment.set(key, ''));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
