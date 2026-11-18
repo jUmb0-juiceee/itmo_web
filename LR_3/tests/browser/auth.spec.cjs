@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const api = process.env.E2E_API_URL || 'http://127.0.0.1:18083/api';
 const key = 'students.session.v1';
+test.use({ timezoneId: 'America/Los_Angeles' });
 let sequence = 0;
 const password = 'browser-test-password';
 
@@ -80,8 +81,18 @@ test('admin creates, filters via QUERY, views, edits and deletes a student', asy
         page.waitForResponse(response => response.request().method() === 'QUERY' && response.status() === 200),
         page.locator('#btn-apply-filter').click()
     ]);
+    await expect(row).toContainText('01.09.2026');
+    for (const search of ['887755', '']) {
+        const pending = page.waitForResponse(response => response.request().method() === 'QUERY'
+            && response.request().postDataJSON().search === search && response.status() === 200);
+        if (search) await page.locator('#search-input').fill(search);
+        else await page.locator('#search-clear').click();
+        const response = await pending;
+        expect(response.request().postDataJSON()).toMatchObject({group: 'M3301', dorm: 1, room: 101, page: 1});
+    }
     await row.locator('[data-action=view]').click();
     await expect(page.locator('#dossier-content')).toContainText('Браузерная заметка');
+    await expect(page.locator('#dossier-content')).toContainText('01.09.2026');
     await page.locator('#btn-close-dossier').click();
     await page.locator('#students-table-body tr').filter({ hasText: '887755' }).locator('[data-action=edit]').click();
     await expect(page.locator('#notes')).toHaveValue('Браузерная заметка');

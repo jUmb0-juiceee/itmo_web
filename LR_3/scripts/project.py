@@ -1,4 +1,4 @@
-"""Local Windows launcher; uses the Python already needed for the previous lab."""
+"""Local Windows launcher using Python's standard library."""
 from pathlib import Path
 import argparse
 import base64

@@ -18,7 +18,7 @@
 /server/.classpath
 /server/.project
 
-# Legacy Django environment, local databases and Python caches
+# Local Python environments, databases and caches
 /venv/
 /.venv/
 *.sqlite3

@@ -36,12 +36,16 @@ let currentPage = 1;
 const itemsPerPage = 20;
 let currentFilters = {};
 let currentSearch = '';
-let currentUseQuery = false;
 let currentSort = '';
 
 // ==========================================
 // ОТРИСОВКА
 // ==========================================
+
+function formatCalendarDate(value) {
+    const [year, month, day] = value.split('-');
+    return day + '.' + month + '.' + year;
+}
 
 function renderStudents(students) {
     const tbody = document.getElementById('students-table-body');
@@ -54,7 +58,7 @@ function renderStudents(students) {
     }
 
     students.forEach(student => {
-        const dateStr = student.date ? new Date(student.date).toLocaleDateString('ru-RU') : '-';
+        const dateStr = student.date ? formatCalendarDate(student.date) : '-';
         const foreignerStr = student.isForeigner ? 'Да' : 'Нет';
         const dormStr = student.dorm ? student.dorm : '-';
         const roomStr = student.room ? student.room : '-';
@@ -92,7 +96,7 @@ function renderDossier(student) {
     const contentDiv = document.getElementById('dossier-content');
     if (!contentDiv) return;
 
-    const dateStr = student.date ? new Date(student.date).toLocaleDateString('ru-RU') : 'Не указано';
+    const dateStr = student.date ? formatCalendarDate(student.date) : 'Не указано';
     const foreignerStr = student.isForeigner ? 'Да' : 'Нет';
     const dormStr = student.dorm ? `Общежитие №${student.dorm}, комната ${student.room}` : 'Не проживает в общежитии';
     const notesStr = student.notes ? student.notes : 'Заметок нет';
@@ -177,13 +181,14 @@ async function loadStudents(filters = {}, page = 1, search = currentSearch) {
     
     currentFilters = filters;
     currentSearch = search;
-    currentUseQuery = false;
     currentPage = page;
     
     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
     
     try {
-        const result = await fetchStudents(filters, page, itemsPerPage, search, currentSort);
+        const result = Object.keys(filters).length > 2
+            ? await queryStudents(filters, search, page)
+            : await fetchStudents(filters, page, itemsPerPage, search, currentSort);
         currentPage = result.pagination.page;
         
         renderStudents(result.data);
@@ -201,59 +206,28 @@ async function loadStudents(filters = {}, page = 1, search = currentSearch) {
     }
 }
 
-async function loadStudentsViaQuery(filters, search = currentSearch, page = 1) {
-    const tbody = document.getElementById('students-table-body');
-    if (!tbody) return;
+async function queryStudents(filters, search, page) {
+    const response = await Auth.fetch('/students', {
+        method: 'QUERY',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            ...filters,
+            search: search,
+            page: page,
+            limit: itemsPerPage,
+            sort: currentSort
+        })
+    });
     
-    currentFilters = filters;
-    currentSearch = search;
-    currentUseQuery = true;
-    currentPage = page;
-    
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
-    try {
-        const response = await Auth.fetch('/students', {
-            method: 'QUERY', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...filters,
-                search: search,
-                page: page,
-                limit: itemsPerPage,
-                sort: currentSort
-            })
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(extractErrorMessage(errorData));
-        }
-        
-        const result = await response.json();
-        currentPage = result.pagination.page;
-        
-        renderStudents(result.data);
-        renderPagination(result.pagination, (targetPage) => loadStudentsViaQuery(filters, search, targetPage));
-    } catch (error) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="error-message">
-                    <div class="error-icon">⚠️</div>
-                    <div class="error-text">${escapeHtml(error.message)}</div>
-                    <button class="retry-btn" onclick="reloadCurrentList()">Повторить попытку</button>
-                </td>
-            </tr>
-        `;
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(extractErrorMessage(errorData));
     }
+    return response.json();
 }
 
-// Перезагружает текущий список тем же способом, которым он был получен
 function reloadCurrentList() {
-    if (currentUseQuery) {
-        loadStudentsViaQuery(currentFilters, currentSearch, currentPage);
-    } else {
-        loadStudents(currentFilters, currentPage, currentSearch);
-    }
+    loadStudents(currentFilters, currentPage, currentSearch);
 }
 
 async function loadStudentForEdit(isu) {
@@ -312,8 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         initSearchHandlers();
         document.getElementById('sort-order').addEventListener('change', event => {
             currentSort = event.target.value;
-            if (currentUseQuery) loadStudentsViaQuery(currentFilters, currentSearch, 1);
-            else loadStudents(currentFilters, 1, currentSearch);
+            loadStudents(currentFilters, 1, currentSearch);
         });
     }
     // 2. Мы на странице формы (form.html)
@@ -361,6 +334,7 @@ function initSearchHandlers() {
     
     if (searchClear) {
         searchClear.addEventListener('click', () => {
+            clearTimeout(searchTimeout);
             searchInput.value = '';
             searchClear.style.display = 'none';
             loadStudents(currentFilters, 1, '');
@@ -449,12 +423,7 @@ if (btnApplyFilter) {
         if (room) filters.room = Number(room);
         if (foreigner !== '') filters.isForeigner = foreigner === 'true';
         
-        const filterCount = Object.keys(filters).length;
-        if (filterCount <= 2) {
-            loadStudents(filters, 1, currentSearch); // Сбрасываем на первую страницу, сохраняя поиск
-        } else {
-            loadStudentsViaQuery(filters, currentSearch);
-        }
+        loadStudents(filters, 1, currentSearch);
     });
 }
 
