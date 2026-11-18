@@ -26,7 +26,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, ApiErrorWriter errors,
             @Qualifier("accessJwtDecoder") JwtDecoder decoder, DatabaseJwtAuthenticationConverter converter) throws Exception {
-        String[] students = {"/api/requests", "/api/requests/*"};
+        String[] students = {"/api/students", "/api/students/*"};
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
@@ -36,11 +36,12 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/actuator/health/readiness").permitAll()
                         .requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs.yaml", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                         .requestMatchers(HttpMethod.GET, students).hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.HEAD, students).hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.valueOf("QUERY"), "/api/requests").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.valueOf("QUERY"), "/api/students").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(students).hasRole("ADMIN")
                         .anyRequest().denyAll())
                 .oauth2ResourceServer(resource -> resource

@@ -11,10 +11,10 @@ import java.util.Map;
  */
 public interface StudentApi {
     ResponseEntity<StudentPageResponse> list(Map<String, String> query);
-    ResponseEntity<StudentPageResponse> query(JsonNode query);
+    ResponseEntity<StudentPageResponse> query(StudentQueryRequest query);
     ResponseEntity<StudentResponse> get(int isu);
-    ResponseEntity<StudentResponse> post(JsonNode request);
-    ResponseEntity<StudentResponse> put(int isu, JsonNode request);
+    ResponseEntity<StudentResponse> post(StudentWriteRequest request);
+    ResponseEntity<StudentResponse> put(int isu, StudentWriteRequest request);
     ResponseEntity<StudentResponse> patch(int isu, StudentPatchRequest request);
     ResponseEntity<Void> delete(int isu);
 }

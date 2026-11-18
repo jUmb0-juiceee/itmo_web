@@ -12,9 +12,10 @@
 | POST | `/api/auth/logout` | refreshToken | 204; refresh отзывается |
 | GET | `/api/auth/me` | Authorization: Bearer accessToken | 200, текущий пользователь |
 
-register/login/refresh/logout не требуют access-токена: refresh и logout
-проверяют переданный refresh-токен самостоятельно. Клиент не добавляет Bearer
-к этим четырём методам, чтобы истёкший access не мешал обновлению сессии.
+register/login/refresh не требуют access-токена. Refresh проверяется самостоятельно,
+чтобы истёкший access не мешал обновлению. Если Bearer передан, владелец должен совпадать.
+Logout требует действующий access Bearer и refresh того же пользователя.
+Перед выходом интерфейс обновляет пару токенов, затем отзывает свою сессию.
 
 UserResponse содержит id, username, email и role; в нём нет пароля/хеша.
 Пара токенов имеет вид:

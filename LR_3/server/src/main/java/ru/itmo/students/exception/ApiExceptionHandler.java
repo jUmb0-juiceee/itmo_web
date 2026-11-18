@@ -21,6 +21,7 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
+    private static final String UNIQUE_VIOLATION="23505", FOREIGN_KEY_VIOLATION="23503", NOT_NULL_VIOLATION="23502", CHECK_VIOLATION="23514", DATA_EXCEPTION_CLASS="22";
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     @ExceptionHandler(ApiException.class)
@@ -33,7 +34,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         SQLException sql = sqlCause(exception);
         if (sql != null) {
             String state = sql.getSQLState();
-            if ("23505".equals(state)) {
+            if (UNIQUE_VIOLATION.equals(state)) {
                 String message = sql.getMessage() == null ? "" : sql.getMessage();
                 String field = message.contains("uq_students_isu") ? "isu"
                         : message.contains("uq_users_username") ? "username"
@@ -41,8 +42,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                 return ResponseEntity.status(HttpStatus.CONFLICT).contentType(MediaType.APPLICATION_JSON).body(new ApiError("Конфликт уникальности данных",
                         field == null ? Map.of() : Map.of(field, "Запись с таким значением уже существует.")));
             }
-            if ("23503".equals(state)) return error(HttpStatus.CONFLICT, "Операция нарушает связь между данными");
-            if (state != null && (state.startsWith("22") || state.equals("23502") || state.equals("23514"))) {
+            if (FOREIGN_KEY_VIOLATION.equals(state)) return error(HttpStatus.CONFLICT, "Операция нарушает связь между данными");
+            if (state != null && (state.startsWith(DATA_EXCEPTION_CLASS) || state.equals(NOT_NULL_VIOLATION) || state.equals(CHECK_VIOLATION))) {
                 return error(HttpStatus.UNPROCESSABLE_ENTITY, "Данные не соответствуют ограничениям модели");
             }
         }
@@ -71,15 +72,28 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception exception, Object body,
             HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        String message = switch (status.value()) {
-            case 400 -> "Некорректный JSON или параметры запроса";
-            case 404 -> "Ресурс не найден";
-            case 405 -> "HTTP-метод не поддерживается для этого ресурса";
-            case 406 -> "Запрошенный формат ответа не поддерживается";
-            case 415 -> "Неподдерживаемый тип содержимого. Используйте application/json";
+        String message = switch (HttpStatus.valueOf(status.value())) {
+            case BAD_REQUEST -> "Некорректный JSON или параметры запроса";
+            case NOT_FOUND -> "Ресурс не найден";
+            case METHOD_NOT_ALLOWED -> "HTTP-метод не поддерживается для этого ресурса";
+            case NOT_ACCEPTABLE -> "Запрошенный формат ответа не поддерживается";
+            case UNSUPPORTED_MEDIA_TYPE -> "Неподдерживаемый тип содержимого. Используйте application/json";
             default -> status.is5xxServerError() ? "Внутренняя ошибка сервера" : "Ошибка запроса";
         };
         var details = new LinkedHashMap<String, Object>();
+        if (exception instanceof org.springframework.http.converter.HttpMessageNotReadableException
+                && request instanceof org.springframework.web.context.request.ServletWebRequest servlet
+                && !servlet.getRequest().getMethod().equals("QUERY")) {
+            Throwable cause=exception;
+            while(cause.getCause()!=null && cause.getCause()!=cause) {
+                cause=cause.getCause();
+                if(cause instanceof com.fasterxml.jackson.databind.JsonMappingException mapping && !mapping.getPath().isEmpty()) {
+                    status=HttpStatus.UNPROCESSABLE_ENTITY;
+                    details.put(mapping.getPath().get(0).getFieldName(),"Invalid field value");
+                    break;
+                }
+            }
+        }
         if (exception instanceof MethodArgumentNotValidException invalid) {
             message = "Ошибка валидации";
             status = HttpStatus.UNPROCESSABLE_ENTITY;

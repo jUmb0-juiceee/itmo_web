@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: students_test
+      POSTGRES_USER: lr3_test
+      POSTGRES_PASSWORD: ${TEST_DB_PASSWORD:?Provided by testing/run.py}
+    ports:
+      - "127.0.0.1:${TEST_DB_PORT:-55433}:5432"
+    # Each run starts with an empty database; no production volume is mounted.
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lr3_test -d students_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

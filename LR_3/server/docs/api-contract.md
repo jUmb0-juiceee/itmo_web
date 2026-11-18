@@ -7,20 +7,20 @@ Boot. HTTP-операции студентов, транзакционный с�
 
 ## Адреса и права
 
-Сохраняем `/api/requests`, без обязательного завершающего `/`.
+Ресурс студентов — `/api/students`, без обязательного завершающего `/`.
 Новый сервер по умолчанию слушает `http://localhost:8080`.
 Все студенческие операции требуют access JWT
 в `Authorization: Bearer <accessToken>`.
 
 | Метод | Путь | Результат | Роли |
 |---|---|---|---|
-| GET | `/api/requests` | Список, 200 | USER, ADMIN |
-| QUERY | `/api/requests` | Список с параметрами в JSON, 200 | USER, ADMIN |
-| GET | `/api/requests/{isu}` | Один студент, 200 | USER, ADMIN |
-| POST | `/api/requests` | Созданный студент, 201 | ADMIN |
-| PUT | `/api/requests/{isu}` | Полностью обновлённый студент, 200 | ADMIN |
-| PATCH | `/api/requests/{isu}` | Частично обновлённый студент, 200 | ADMIN |
-| DELETE | `/api/requests/{isu}` | 204, без тела | ADMIN |
+| GET | `/api/students` | Список, 200 | USER, ADMIN |
+| QUERY | `/api/students` | Список с параметрами в JSON, 200 | USER, ADMIN |
+| GET | `/api/students/{isu}` | Один студент, 200 | USER, ADMIN |
+| POST | `/api/students` | Созданный студент, 201 | ADMIN |
+| PUT | `/api/students/{isu}` | Полностью обновлённый студент, 200 | ADMIN |
+| PATCH | `/api/students/{isu}` | Частично обновлённый студент, 200 | ADMIN |
+| DELETE | `/api/students/{isu}` | 204, без тела | ADMIN |
 
 PUT — добавление по ТЗ ЛР 3. Остальные методы уже есть в исходном API.
 QUERY сохраняется: его вызывает `main.js`. Для него добавлены HTTP-маршрутизация
@@ -77,12 +77,12 @@ PATCH меняет только переданные поля. Пропуск п
 `{"dorm":null,"room":null,"date":null}` очищает его. После объединения
 проверяется полное итоговое состояние студента. Можно менять ИСУ: занятый ИСУ
 даёт 409, успешный ответ содержит новый ИСУ; внутренний id не меняется.
-Неизвестные поля студента игнорируются, как в исходном сериализаторе.
+Неизвестные поля POST/PUT игнорируются; неизвестное поле PATCH даёт 422.
 
 ## Список: поиск, фильтры и страницы
 
 ```text
-GET /api/requests?page=1&limit=20&search=Иванов&group=M3301&sort=fio,asc
+GET /api/students?page=1&limit=20&search=Иванов&group=M3301&sort=fio,asc
 ```
 
 | Параметр | Значение |
@@ -179,7 +179,7 @@ register/login/refresh/logout учитываются счётчиком, вкл�
 ## Граница текущего этапа
 
 Без access JWT доступны GET `/actuator/health`, OPTIONS API и POST-методы
-register/login/refresh/logout. Доступ к данным требует валидного access JWT и
+register/login/refresh. Logout требует access владельца сессии. Доступ к данным требует валидного access JWT и
 соответствующей роли. Health включает
 проверку соединения с PostgreSQL, но не публикует детали подключения.
 api.js и QUERY уже подключены к Java через Auth.fetch. Swagger UI, OpenAPI JSON/YAML

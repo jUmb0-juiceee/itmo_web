@@ -22,14 +22,12 @@ public class JpaStudentService implements StudentService {
     private final StudentRepository students;
     private final StudentMapper mapper;
     private final StudentValidator validator;
-    private final StudentInputParser parser;
 
     public JpaStudentService(StudentRepository students, StudentMapper mapper,
-                             StudentValidator validator, StudentInputParser parser) {
+                             StudentValidator validator) {
         this.students = students;
         this.mapper = mapper;
         this.validator = validator;
-        this.parser = parser;
     }
 
     @Override
@@ -80,7 +78,7 @@ public class JpaStudentService implements StudentService {
     @PreAuthorize("hasRole('ADMIN')")
     public StudentResponse patch(int isu, StudentPatchRequest patch) {
         var entity = forUpdate(isu);
-        var normalized = validator.normalize(parser.merge(mapper.toResponse(entity), patch), true);
+        var normalized = validator.normalize(mapper.merge(entity, patch), true);
         ensureIsuAvailable(normalized.isu(), entity.getIsu());
         mapper.replace(entity, normalized);
         students.flush();

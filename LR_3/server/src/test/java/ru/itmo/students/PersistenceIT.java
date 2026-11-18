@@ -42,7 +42,7 @@ class PersistenceIT {
     @Test
     void usesEclipseLinkAndAppliesTheInitialMigration() {
         assertThat(factory.unwrap(JpaEntityManagerFactory.class)).isNotNull();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("3");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("5");
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
     }
 
@@ -136,7 +136,7 @@ class PersistenceIT {
 
     @Test
     void studentRoutesAreClosedUntilAuthenticationIsImplemented() throws Exception {
-        mvc.perform(get("/api/requests"))
+        mvc.perform(get("/api/students"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("Требуется авторизация"));
     }

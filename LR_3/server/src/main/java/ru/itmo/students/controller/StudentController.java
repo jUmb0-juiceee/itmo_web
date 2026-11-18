@@ -1,7 +1,6 @@
 package ru.itmo.students.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,8 +16,7 @@ import java.util.Map;
 import java.util.List;
 
 @RestController
-@Hidden // Avoid treating QUERY's method condition as mappings for every standard verb.
-@RequestMapping(path = "/api/requests", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/api/students", produces = MediaType.APPLICATION_JSON_VALUE)
 public class StudentController implements StudentApi {
     private final StudentService service;
     private final StudentInputParser parser;
@@ -36,8 +34,8 @@ public class StudentController implements StudentApi {
 
     @Override
     @QueryMapping
-    public ResponseEntity<StudentPageResponse> query(@RequestBody JsonNode query) {
-        return ResponseEntity.ok(service.findAll(parser.query(query)));
+    public ResponseEntity<StudentPageResponse> query(@RequestBody StudentQueryRequest query) {
+        return ResponseEntity.ok(service.findAll(query));
     }
 
     @Override
@@ -46,15 +44,15 @@ public class StudentController implements StudentApi {
 
     @Override
     @PostMapping
-    public ResponseEntity<StudentResponse> post(@RequestBody JsonNode request) {
-        var response = service.create(parser.write(request, false));
-        return ResponseEntity.created(URI.create("/api/requests/" + response.isu())).body(response);
+    public ResponseEntity<StudentResponse> post(@RequestBody StudentWriteRequest request) {
+        var response = service.create(request);
+        return ResponseEntity.created(URI.create("/api/students/" + response.isu())).body(response);
     }
 
     @Override
     @PutMapping("/{isu}")
-    public ResponseEntity<StudentResponse> put(@PathVariable int isu, @RequestBody JsonNode request) {
-        return ResponseEntity.ok(service.replace(isu, parser.write(request, false)));
+    public ResponseEntity<StudentResponse> put(@PathVariable int isu, @RequestBody StudentWriteRequest request) {
+        return ResponseEntity.ok(service.replace(isu, request));
     }
 
     @Override

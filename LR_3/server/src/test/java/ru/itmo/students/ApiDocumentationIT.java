@@ -32,7 +32,7 @@ class ApiDocumentationIT {
                 .andExpect(jsonPath("$.url").value("/v3/api-docs"));
         mvc.perform(get("/v3/api-docs.yaml")).andExpect(status().isOk())
                 .andExpect(content().string(containsString("bearerAuth")));
-        mvc.perform(get("/api/requests")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/students")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -41,13 +41,13 @@ class ApiDocumentationIT {
         assertThat(api.get("openapi").asText()).startsWith("3.0.");
         assertThat(names(api.at("/paths"))).containsExactlyInAnyOrder(
                 "/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/me",
-                "/api/requests", "/api/requests/{isu}", "/actuator/health");
-        var collection = api.at("/paths").get("/api/requests");
+                "/api/students", "/api/students/{isu}", "/actuator/health");
+        var collection = api.at("/paths").get("/api/students");
         assertThat(names(collection)).containsExactlyInAnyOrder("get", "post", "options", "x-query");
         assertThat(collection.at("/x-query/operationId").asText()).isEqualTo("queryStudents");
         assertThat(collection.at("/post/requestBody/content/application~1json/schema/$ref").asText())
                 .isEqualTo("#/components/schemas/StudentWriteRequest");
-        var detail = api.at("/paths").get("/api/requests/{isu}");
+        var detail = api.at("/paths").get("/api/students/{isu}");
         assertThat(names(detail)).containsExactlyInAnyOrder("parameters", "get", "put", "patch", "delete");
         assertThat(detail.at("/patch/requestBody/content/application~1json/schema/$ref").asText())
                 .isEqualTo("#/components/schemas/StudentPatchRequest");
@@ -68,7 +68,7 @@ class ApiDocumentationIT {
         assertThat(api.at("/components/securitySchemes/bearerAuth/type").asText()).isEqualTo("http");
         assertThat(api.at("/components/securitySchemes/bearerAuth/scheme").asText()).isEqualTo("bearer");
         assertThat(api.at("/security/0/bearerAuth").isArray()).isTrue();
-        for (String endpoint : List.of("register", "login", "refresh", "logout")) {
+        for (String endpoint : List.of("register", "login", "refresh")) {
             assertThat(api.get("paths").get("/api/auth/" + endpoint).at("/post/security").isArray()).isTrue();
             assertThat(api.get("paths").get("/api/auth/" + endpoint).at("/post/security").size()).isZero();
         }

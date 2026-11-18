@@ -283,7 +283,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests",
+            "url": "{{baseUrl}}/api/students",
             "description": "Создаёт новую демонстрационную запись. При конфликте ИСУ выполнение останавливается: существующие записи не изменяются.",
             "body": {
               "mode": "raw",
@@ -304,7 +304,7 @@
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
                   "if (pm.response.code === 201) pm.environment.set('createdStudentIsu', pm.response.json().isu);",
                   "else pm.execution.setNextRequest(null);",
-                  "pm.test(\"ИСУ и Location\", () => { pm.expect(pm.response.json().isu).to.eql(Number(pm.environment.get('studentIsu'))); pm.expect(pm.response.headers.get('Location')).to.include('/api/requests/'); });"
+                  "pm.test(\"ИСУ и Location\", () => { pm.expect(pm.response.json().isu).to.eql(Number(pm.environment.get('studentIsu'))); pm.expect(pm.response.headers.get('Location')).to.include('/api/students/'); });"
                 ]
               }
             }
@@ -330,7 +330,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests?page=1&limit=1&search={{runId}}&group=M3301&dorm=1&isForeigner=false&sort=isu,asc",
+            "url": "{{baseUrl}}/api/students?page=1&limit=1&search={{runId}}&group=M3301&dorm=1&isForeigner=false&sort=isu,asc",
             "description": "Ожидаемый результат: HTTP 200."
           },
           "event": [
@@ -366,7 +366,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{createdStudentIsu}}",
             "description": "Ожидаемый результат: HTTP 200."
           },
           "event": [
@@ -406,7 +406,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests",
+            "url": "{{baseUrl}}/api/students",
             "description": "Ожидаемый результат: HTTP 200.",
             "body": {
               "mode": "raw",
@@ -455,7 +455,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests",
+            "url": "{{baseUrl}}/api/students",
             "description": "Ожидаемый результат: HTTP 403.",
             "body": {
               "mode": "raw",
@@ -504,7 +504,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{createdStudentIsu}}",
             "description": "Ожидаемый результат: HTTP 403.",
             "body": {
               "mode": "raw",
@@ -553,7 +553,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{createdStudentIsu}}",
             "description": "Ожидаемый результат: HTTP 403.",
             "body": {
               "mode": "raw",
@@ -598,7 +598,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{createdStudentIsu}}",
             "description": "Ожидаемый результат: HTTP 403."
           },
           "event": [
@@ -638,7 +638,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{createdStudentIsu}}",
             "description": "Ожидаемый результат: HTTP 200.",
             "body": {
               "mode": "raw",
@@ -687,7 +687,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{createdStudentIsu}}",
             "description": "Ожидаемый результат: HTTP 422.",
             "body": {
               "mode": "raw",
@@ -732,7 +732,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{createdStudentIsu}}",
             "description": "Ожидаемый результат: HTTP 200."
           },
           "event": [
@@ -772,7 +772,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{createdStudentIsu}}",
             "description": "Ожидаемый результат: HTTP 200.",
             "body": {
               "mode": "raw",
@@ -818,7 +818,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{studentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{studentIsu}}",
             "description": "Ожидаемый результат: HTTP 404."
           },
           "event": [
@@ -858,7 +858,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests",
+            "url": "{{baseUrl}}/api/students",
             "description": "Ожидаемый результат: HTTP 409.",
             "body": {
               "mode": "raw",
@@ -1078,7 +1078,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests",
+            "url": "{{baseUrl}}/api/students",
             "description": "Ожидаемый результат: HTTP 401."
           },
           "event": [
@@ -1114,7 +1114,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{createdStudentIsu}}",
             "description": "Ожидаемый результат: HTTP 204."
           },
           "event": [
@@ -1150,7 +1150,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/requests/{{createdStudentIsu}}",
+            "url": "{{baseUrl}}/api/students/{{createdStudentIsu}}",
             "description": "Ожидаемый результат: HTTP 404."
           },
           "event": [
@@ -1171,7 +1171,14 @@
           "request": {
             "method": "POST",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "header": [
               {
@@ -1255,7 +1262,14 @@
           "request": {
             "method": "POST",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "header": [
               {

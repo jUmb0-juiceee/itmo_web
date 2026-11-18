@@ -135,7 +135,13 @@ window.Auth = (() => {
         try {
             if (refreshPromise) await refreshPromise.catch(() => {});
             const active = session();
-            if (active) await publicPost('/auth/logout', { refreshToken: active.refreshToken });
+            if (active) {
+                await refresh();
+                const current = session();
+                await read(await fetch(base + '/auth/logout', {method: 'POST', credentials: 'omit',
+                    headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + current.accessToken},
+                    body: JSON.stringify({refreshToken: current.refreshToken})}));
+            }
         } catch { /* Local credentials must still be removed if the server is unreachable. */ }
         finally { clear(); location.replace('login.html'); }
     }

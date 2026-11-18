@@ -38,37 +38,37 @@ class StudentApiIT {
 
     @Test
     void fullCrudCycleIncludesPutPatchIsuChangeAndDelete() throws Exception {
-        mvc.perform(post("/api/requests").contentType(MediaType.APPLICATION_JSON).content(body(123456)))
-                .andExpect(status().isCreated()).andExpect(header().string("Location", "/api/requests/123456"))
+        mvc.perform(post("/api/students").contentType(MediaType.APPLICATION_JSON).content(body(123456)))
+                .andExpect(status().isCreated()).andExpect(header().string("Location", "/api/students/123456"))
                 .andExpect(jsonPath("$.isu").value(123456)).andExpect(jsonPath("$.id").doesNotExist());
         var id = students.findByIsu(123456).orElseThrow().getId();
-        mvc.perform(get("/api/requests/123456")).andExpect(status().isOk());
-        mvc.perform(put("/api/requests/123456").contentType(MediaType.APPLICATION_JSON).content(body(654321)))
+        mvc.perform(get("/api/students/123456")).andExpect(status().isOk());
+        mvc.perform(put("/api/students/123456").contentType(MediaType.APPLICATION_JSON).content(body(654321)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.isu").value(654321));
         assertThat(students.findByIsu(654321).orElseThrow().getId()).isEqualTo(id);
-        mvc.perform(get("/api/requests/123456")).andExpect(status().isNotFound());
-        mvc.perform(patch("/api/requests/654321").contentType(MediaType.APPLICATION_JSON).content("{\"notes\":\"Обновлено\"}"))
+        mvc.perform(get("/api/students/123456")).andExpect(status().isNotFound());
+        mvc.perform(patch("/api/students/654321").contentType(MediaType.APPLICATION_JSON).content("{\"notes\":\"Обновлено\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.notes").value("Обновлено"));
-        mvc.perform(delete("/api/requests/654321")).andExpect(status().isNoContent()).andExpect(content().string(""));
-        mvc.perform(get("/api/requests/654321")).andExpect(status().isNotFound());
+        mvc.perform(delete("/api/students/654321")).andExpect(status().isNoContent()).andExpect(content().string(""));
+        mvc.perform(get("/api/students/654321")).andExpect(status().isNotFound());
     }
 
     @Test
     void invalidPatchDoesNotPartiallyChangeAnExistingStudent() throws Exception {
         settledStudent();
-        mvc.perform(patch("/api/requests/123456").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(patch("/api/students/123456").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"room\":null,\"notes\":\"Не должно сохраниться\"}"))
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.details.non_field_errors").exists());
-        mvc.perform(get("/api/requests/123456")).andExpect(status().isOk())
+        mvc.perform(get("/api/students/123456")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.room").value(101)).andExpect(jsonPath("$.notes").value("Исходная заметка"));
     }
 
     @Test
     void patchOmissionsKeepValuesAndExplicitNullClearsSettlement() throws Exception {
         settledStudent();
-        mvc.perform(patch("/api/requests/123456").contentType(MediaType.APPLICATION_JSON).content("{\"notes\":\"Новая\"}"))
+        mvc.perform(patch("/api/students/123456").contentType(MediaType.APPLICATION_JSON).content("{\"notes\":\"Новая\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.dorm").value(1)).andExpect(jsonPath("$.isForeigner").value(true));
-        mvc.perform(patch("/api/requests/123456").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(patch("/api/students/123456").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"dorm\":null,\"room\":null,\"date\":null,\"isForeigner\":false}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.dorm").isEmpty())
                 .andExpect(jsonPath("$.room").isEmpty()).andExpect(jsonPath("$.date").isEmpty())
@@ -76,11 +76,11 @@ class StudentApiIT {
     }
 
     @Test
-    void putResetsOmittedOptionalFieldsWhilePatchIgnoresUnknownFields() throws Exception {
+    void putResetsOmittedOptionalFieldsWhilePatchRejectsUnknownFields() throws Exception {
         settledStudent();
-        mvc.perform(patch("/api/requests/123456").contentType(MediaType.APPLICATION_JSON).content("{\"unknown\":123}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.room").value(101));
-        mvc.perform(put("/api/requests/123456").contentType(MediaType.APPLICATION_JSON).content(body(123456)))
+        mvc.perform(patch("/api/students/123456").contentType(MediaType.APPLICATION_JSON).content("{\"unknown\":123}"))
+                .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.details.unknown").exists());
+        mvc.perform(put("/api/students/123456").contentType(MediaType.APPLICATION_JSON).content(body(123456)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.room").isEmpty())
                 .andExpect(jsonPath("$.isForeigner").value(false)).andExpect(jsonPath("$.notes").value(""));
     }
@@ -88,10 +88,10 @@ class StudentApiIT {
     @Test
     void duplicatesOnCreateAndIsuChangeAreConflicts() throws Exception {
         settledStudent();
-        mvc.perform(post("/api/requests").contentType(MediaType.APPLICATION_JSON).content(body(123456)))
+        mvc.perform(post("/api/students").contentType(MediaType.APPLICATION_JSON).content(body(123456)))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.details.isu").exists());
         students.saveAndFlush(new StudentEntity(654321, "Петров Пётр Петрович", "M3301", null, null, null, false, ""));
-        mvc.perform(patch("/api/requests/123456").contentType(MediaType.APPLICATION_JSON).content("{\"isu\":654321}"))
+        mvc.perform(patch("/api/students/123456").contentType(MediaType.APPLICATION_JSON).content("{\"isu\":654321}"))
                 .andExpect(status().isConflict());
         assertThat(students.findByIsu(123456)).isPresent();
     }
@@ -99,11 +99,11 @@ class StudentApiIT {
     @Test
     void filteredSearchIsCaseInsensitiveForCyrillicAndCombinesWithFalseBoolean() throws Exception {
         listFixtures();
-        mvc.perform(get("/api/requests").param("search", "  ИВАНОВ  ").param("group", "M3301")
+        mvc.perform(get("/api/students").param("search", "  ИВАНОВ  ").param("group", "M3301")
                         .param("dorm", "1").param("room", "101").param("isForeigner", "false"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.pagination.total").value(1))
                 .andExpect(jsonPath("$.data[0].isu").value(333333));
-        mvc.perform(get("/api/requests").param("search", "ОСОБАЯ"))
+        mvc.perform(get("/api/students").param("search", "ОСОБАЯ"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.pagination.total").value(1))
                 .andExpect(jsonPath("$.data[0].isu").value(222222));
     }
@@ -112,29 +112,29 @@ class StudentApiIT {
     @ValueSource(strings = {"%", "_", "\\"})
     void searchTreatsSqlWildcardsAsLiteralCharacters(String search) throws Exception {
         listFixtures();
-        mvc.perform(get("/api/requests").param("search", search))
+        mvc.perform(get("/api/students").param("search", search))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.pagination.total").value(1));
     }
 
     @Test
     void sortingAndPaginationAreAppliedInDatabaseWithStableTies() throws Exception {
         listFixtures();
-        mvc.perform(get("/api/requests").param("sort", "isu,asc").param("limit", "1").param("page", "2"))
+        mvc.perform(get("/api/students").param("sort", "isu,asc").param("limit", "1").param("page", "2"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].isu").value(222222))
                 .andExpect(jsonPath("$.pagination.total").value(3)).andExpect(jsonPath("$.pagination.total_pages").value(3))
                 .andExpect(jsonPath("$.pagination.has_prev").value(true)).andExpect(jsonPath("$.pagination.has_next").value(true));
-        mvc.perform(get("/api/requests").param("sort", "isu,desc"))
+        mvc.perform(get("/api/students").param("sort", "isu,desc"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].isu").value(333333));
-        mvc.perform(get("/api/requests").param("sort", "group,asc").param("limit", "1").param("page", "2"))
+        mvc.perform(get("/api/students").param("sort", "group,asc").param("limit", "1").param("page", "2"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].isu").value(111111));
     }
 
     @Test
     void queryAndGetReturnTheSamePage() throws Exception {
         listFixtures();
-        String get = mvc.perform(get("/api/requests").param("isForeigner", "false").param("sort", "isu,desc").param("limit", "1"))
+        String get = mvc.perform(get("/api/students").param("isForeigner", "false").param("sort", "isu,desc").param("limit", "1"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        String query = mvc.perform(request(HttpMethod.valueOf("QUERY"), "/api/requests")
+        String query = mvc.perform(request(HttpMethod.valueOf("QUERY"), "/api/students")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"isForeigner\":false,\"sort\":\"isu,desc\",\"limit\":1}"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(json.readTree(query)).isEqualTo(json.readTree(get));
@@ -143,20 +143,20 @@ class StudentApiIT {
     @Test
     void paginationFallbackAndLargePageKeepTheLegacyContract() throws Exception {
         listFixtures();
-        mvc.perform(get("/api/requests").param("page", "2").param("limit", "oops").param("unknown", "ignored"))
+        mvc.perform(get("/api/students").param("page", "2").param("limit", "oops").param("unknown", "ignored"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.pagination.page").value(1))
                 .andExpect(jsonPath("$.pagination.limit").value(20));
-        mvc.perform(get("/api/requests").param("page", "0").param("limit", "101"))
+        mvc.perform(get("/api/students").param("page", "0").param("limit", "101"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.pagination.page").value(1))
                 .andExpect(jsonPath("$.pagination.limit").value(20));
-        mvc.perform(get("/api/requests").param("page", "2147483647").param("limit", "100"))
+        mvc.perform(get("/api/students").param("page", "2147483647").param("limit", "100"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data").isEmpty())
                 .andExpect(jsonPath("$.pagination.total").value(3)).andExpect(jsonPath("$.pagination.has_next").value(false));
     }
 
     @Test
     void emptyListHasZeroPages() throws Exception {
-        mvc.perform(get("/api/requests"))
+        mvc.perform(get("/api/students"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data").isEmpty())
                 .andExpect(jsonPath("$.pagination.total_pages").value(0));
     }
@@ -166,7 +166,7 @@ class StudentApiIT {
     void invalidFieldValuesAre422WithFieldErrors(String field, String value) throws Exception {
         var node = (com.fasterxml.jackson.databind.node.ObjectNode) json.readTree(body(123456));
         node.set(field, json.readTree(value));
-        mvc.perform(post("/api/requests").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsBytes(node)))
+        mvc.perform(post("/api/students").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsBytes(node)))
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.error").isString())
                 .andExpect(jsonPath("$.details." + field).isString());
         assertThat(students.count()).isZero();
@@ -184,9 +184,9 @@ class StudentApiIT {
 
     @Test
     void missingRequiredFieldsAndMalformedJsonAre400() throws Exception {
-        mvc.perform(post("/api/requests").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mvc.perform(post("/api/students").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.details.isu").exists());
-        mvc.perform(post("/api/requests").contentType(MediaType.APPLICATION_JSON).content("{"))
+        mvc.perform(post("/api/students").contentType(MediaType.APPLICATION_JSON).content("{"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").isString())
                 .andExpect(jsonPath("$.trace").doesNotExist());
     }
@@ -194,9 +194,9 @@ class StudentApiIT {
     @ParameterizedTest
     @ValueSource(strings = {"[]", "null", "true", "\"text\""})
     void bodyMustBeAnObject(String body) throws Exception {
-        mvc.perform(post("/api/requests").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/students").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").isString());
-        mvc.perform(request(HttpMethod.valueOf("QUERY"), "/api/requests").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(request(HttpMethod.valueOf("QUERY"), "/api/students").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").isString());
     }
 
@@ -206,7 +206,7 @@ class StudentApiIT {
                 {"isu":"123456","fio":" Иванов Иван Иванович ","group":" M3301 ",
                  "dorm":"","room":"","date":"","isForeigner":"false","notes":"  Заметка  "}
                 """;
-        mvc.perform(post("/api/requests").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/students").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.isForeigner").value(false))
                 .andExpect(jsonPath("$.fio").value("Иванов Иван Иванович"))
                 .andExpect(jsonPath("$.notes").value("Заметка")).andExpect(jsonPath("$.date").isEmpty());
@@ -216,11 +216,11 @@ class StudentApiIT {
     void notesLimitCountsUnicodeCharactersLikePostgresRatherThanUtf16CodeUnits() throws Exception {
         var node = (com.fasterxml.jackson.databind.node.ObjectNode) json.readTree(body(123456));
         node.put("notes", "😀".repeat(500));
-        mvc.perform(post("/api/requests").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsBytes(node)))
+        mvc.perform(post("/api/students").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsBytes(node)))
                 .andExpect(status().isCreated());
         node.put("isu", 654321);
         node.put("notes", "😀".repeat(501));
-        mvc.perform(post("/api/requests").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsBytes(node)))
+        mvc.perform(post("/api/students").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsBytes(node)))
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.details.notes").exists());
     }
 
@@ -228,54 +228,54 @@ class StudentApiIT {
     @ValueSource(strings = {"group=bad", "dorm=1.5", "room=true", "isForeigner=maybe", "sort=fio;DROP TABLE students,asc", "sort=isu,sideways"})
     void invalidFiltersAndSortAre400(String parameter) throws Exception {
         String[] pair = parameter.split("=", 2);
-        mvc.perform(get("/api/requests").param(pair[0], pair[1]))
+        mvc.perform(get("/api/students").param(pair[0], pair[1]))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.details." + pair[0]).exists());
     }
 
     @Test
     void malformedPatchRequiredNullAndUnknownStudentAreHandled() throws Exception {
         settledStudent();
-        mvc.perform(patch("/api/requests/123456").contentType(MediaType.APPLICATION_JSON).content("{\"isu\":null}"))
+        mvc.perform(patch("/api/students/123456").contentType(MediaType.APPLICATION_JSON).content("{\"isu\":null}"))
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.details.isu").exists());
-        mvc.perform(patch("/api/requests/123456").contentType(MediaType.APPLICATION_JSON).content("[]"))
+        mvc.perform(patch("/api/students/123456").contentType(MediaType.APPLICATION_JSON).content("[]"))
                 .andExpect(status().isBadRequest());
-        mvc.perform(patch("/api/requests/999999").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mvc.perform(patch("/api/students/999999").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isNotFound());
-        mvc.perform(put("/api/requests/999999").contentType(MediaType.APPLICATION_JSON).content(body(999999)))
+        mvc.perform(put("/api/students/999999").contentType(MediaType.APPLICATION_JSON).content(body(999999)))
                 .andExpect(status().isNotFound());
-        mvc.perform(delete("/api/requests/999999")).andExpect(status().isNotFound());
+        mvc.perform(delete("/api/students/999999")).andExpect(status().isNotFound());
     }
 
     @Test
     void methodAndMediaTypeErrorsKeepJsonFormat() throws Exception {
-        mvc.perform(delete("/api/requests")).andExpect(status().isMethodNotAllowed())
+        mvc.perform(delete("/api/students")).andExpect(status().isMethodNotAllowed())
                 .andExpect(header().string("Allow", containsString("QUERY"))).andExpect(jsonPath("$.error").isString());
-        mvc.perform(post("/api/requests/123456").contentType(MediaType.APPLICATION_JSON).content(body(123456)))
+        mvc.perform(post("/api/students/123456").contentType(MediaType.APPLICATION_JSON).content(body(123456)))
                 .andExpect(status().isMethodNotAllowed());
-        mvc.perform(post("/api/requests").contentType(MediaType.TEXT_PLAIN).content(body(123456)))
+        mvc.perform(post("/api/students").contentType(MediaType.TEXT_PLAIN).content(body(123456)))
                 .andExpect(status().isUnsupportedMediaType()).andExpect(jsonPath("$.error").isString());
-        mvc.perform(get("/api/requests").accept(MediaType.APPLICATION_XML))
+        mvc.perform(get("/api/students").accept(MediaType.APPLICATION_XML))
                 .andExpect(status().isNotAcceptable()).andExpect(jsonPath("$.error").isString());
-        mvc.perform(get("/api/requests/not-a-number")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/students/not-a-number")).andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     void readRoleCanUseQueryButCannotWrite() throws Exception {
-        mvc.perform(get("/api/requests")).andExpect(status().isOk());
-        mvc.perform(request(HttpMethod.valueOf("QUERY"), "/api/requests").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mvc.perform(get("/api/students")).andExpect(status().isOk());
+        mvc.perform(request(HttpMethod.valueOf("QUERY"), "/api/students").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isOk());
-        mvc.perform(post("/api/requests").contentType(MediaType.APPLICATION_JSON).content(body(123456)))
+        mvc.perform(post("/api/students").contentType(MediaType.APPLICATION_JSON).content(body(123456)))
                 .andExpect(status().isForbidden()).andExpect(jsonPath("$.error").value("Недостаточно прав"));
     }
 
     @Test
     @WithAnonymousUser
     void anonymousDataAccessIsDeniedButOptionsIsAvailable() throws Exception {
-        mvc.perform(get("/api/requests")).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").isString());
-        mvc.perform(request(HttpMethod.valueOf("QUERY"), "/api/requests").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mvc.perform(get("/api/students")).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").isString());
+        mvc.perform(request(HttpMethod.valueOf("QUERY"), "/api/students").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(options("/api/requests")).andExpect(status().isNoContent())
+        mvc.perform(options("/api/students")).andExpect(status().isNoContent())
                 .andExpect(header().string("Allow", containsString("QUERY")));
     }
 

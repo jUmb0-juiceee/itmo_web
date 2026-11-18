@@ -38,7 +38,7 @@ class ApiExceptionHandlerTest {
         var mvc = MockMvcBuilders.standaloneSetup(new StudentController(service, parser))
                 .setCustomHandlerMapping(new WebConfiguration()::getRequestMappingHandlerMapping)
                 .setControllerAdvice(new ApiExceptionHandler()).build();
-        var response = mvc.perform(get("/api/requests/123456"))
+        var response = mvc.perform(get("/api/students/123456"))
                 .andExpect(status().isInternalServerError()).andExpect(jsonPath("$.error").value("Внутренняя ошибка сервера"))
                 .andExpect(jsonPath("$.trace").doesNotExist()).andReturn().getResponse().getContentAsString();
         assertThat(response).doesNotContain("internal-secret", "IllegalStateException", "stackTrace");

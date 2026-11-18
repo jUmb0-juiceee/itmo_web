@@ -108,8 +108,8 @@ class AuthApiIT {
         assertThat(replacement.get("refreshToken").asText()).isNotEqualTo(original.get("refreshToken").asText());
         assertThat(tokens.findByTokenHash(JwtTokens.hash(original.get("refreshToken").asText())).orElseThrow().getRevokedAt()).isNotNull();
         refresh(original, 401);
-        mvc.perform(get("/api/requests").header("Authorization", bearer(replacement))).andExpect(status().isOk());
-        mvc.perform(post("/api/auth/logout").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(get("/api/students").header("Authorization", bearer(replacement))).andExpect(status().isOk());
+        mvc.perform(post("/api/auth/logout").header("Authorization", bearer(replacement)).contentType(MediaType.APPLICATION_JSON)
                         .content(refreshBody(replacement.get("refreshToken").asText())))
                 .andExpect(status().isNoContent());
         refresh(replacement, 401);
@@ -119,7 +119,7 @@ class AuthApiIT {
     void accessAndRefreshTokensAreNotInterchangeableAndTamperingFails() throws Exception {
         register();
         var pair = login("student", "test-password");
-        mvc.perform(get("/api/requests").header("Authorization", "Bearer " + pair.get("refreshToken").asText()))
+        mvc.perform(get("/api/students").header("Authorization", "Bearer " + pair.get("refreshToken").asText()))
                 .andExpect(status().isUnauthorized());
         mvc.perform(post("/api/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content(refreshBody(pair.get("accessToken").asText())))
@@ -128,7 +128,7 @@ class AuthApiIT {
         var claims = (com.fasterxml.jackson.databind.node.ObjectNode) json.readTree(Base64.getUrlDecoder().decode(parts[1]));
         claims.put("role", "ADMIN");
         parts[1] = Base64.getUrlEncoder().withoutPadding().encodeToString(json.writeValueAsBytes(claims));
-        mvc.perform(get("/api/requests").header("Authorization", "Bearer " + String.join(".", parts)))
+        mvc.perform(get("/api/students").header("Authorization", "Bearer " + String.join(".", parts)))
                 .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").isString());
     }
 
@@ -145,7 +145,7 @@ class AuthApiIT {
                 .expiresAt(kind.equals("expired") ? now.minusSeconds(1) : now.plusSeconds(120))
                 .claim("token_use", kind.equals("purpose") ? "refresh" : "access").build();
         String token = encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
-        mvc.perform(get("/api/requests").header("Authorization", "Bearer " + token))
+        mvc.perform(get("/api/students").header("Authorization", "Bearer " + token))
                 .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").isString());
     }
 
@@ -154,16 +154,16 @@ class AuthApiIT {
         register();
         var user = login("student", "test-password");
         String student = "{\"isu\":887766,\"fio\":\"Иванов Иван Иванович\",\"group\":\"M3301\"}";
-        mvc.perform(get("/api/requests").header("Authorization", bearer(user))).andExpect(status().isOk());
-        mvc.perform(post("/api/requests").header("Authorization", bearer(user)).contentType(MediaType.APPLICATION_JSON).content(student))
+        mvc.perform(get("/api/students").header("Authorization", bearer(user))).andExpect(status().isOk());
+        mvc.perform(post("/api/students").header("Authorization", bearer(user)).contentType(MediaType.APPLICATION_JSON).content(student))
                 .andExpect(status().isForbidden());
         var admin = users.saveAndFlush(new UserEntity("admin-user", "admin@example.org", passwords.encode("admin-password"), Role.ADMIN, Instant.now()));
         var adminPair = login("admin-user", "admin-password");
-        mvc.perform(post("/api/requests").header("Authorization", bearer(adminPair)).contentType(MediaType.APPLICATION_JSON).content(student))
+        mvc.perform(post("/api/students").header("Authorization", bearer(adminPair)).contentType(MediaType.APPLICATION_JSON).content(student))
                 .andExpect(status().isCreated());
         em.createNativeQuery("UPDATE app_users SET role='USER' WHERE id=?").setParameter(1, admin.getId()).executeUpdate();
         em.clear();
-        mvc.perform(delete("/api/requests/887766").header("Authorization", bearer(adminPair))).andExpect(status().isForbidden());
+        mvc.perform(delete("/api/students/887766").header("Authorization", bearer(adminPair))).andExpect(status().isForbidden());
     }
 
     @Test
@@ -173,7 +173,7 @@ class AuthApiIT {
         users.delete(users.findByUsernameIgnoreCase("student").orElseThrow());
         users.flush();
         em.clear();
-        mvc.perform(get("/api/requests").header("Authorization", bearer(pair))).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/students").header("Authorization", bearer(pair))).andExpect(status().isUnauthorized());
         refresh(pair, 401);
     }
 
@@ -200,11 +200,11 @@ class AuthApiIT {
 
     @Test
     void corsPermitsLiveServerAndQueryButRejectsUnknownOriginsWithJson() throws Exception {
-        mvc.perform(options("/api/requests").header("Origin", "http://127.0.0.1:5500")
+        mvc.perform(options("/api/students").header("Origin", "http://127.0.0.1:5500")
                         .header("Access-Control-Request-Method", "QUERY").header("Access-Control-Request-Headers", "authorization,content-type"))
                 .andExpect(status().isOk()).andExpect(header().string("Access-Control-Allow-Origin", "http://127.0.0.1:5500"))
                 .andExpect(header().string("Access-Control-Allow-Methods", containsString("QUERY")));
-        mvc.perform(get("/api/requests").header("Origin", "https://not-allowed.example"))
+        mvc.perform(get("/api/students").header("Origin", "https://not-allowed.example"))
                 .andExpect(status().isForbidden()).andExpect(jsonPath("$.error").isString());
     }
 
@@ -218,6 +218,22 @@ class AuthApiIT {
                         .content(json.writeValueAsBytes(new LoginRequest(username, password))))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
     }
+    @Test
+    void anotherUserCannotRefreshOrLogoutTheOwnersSession() throws Exception {
+        register();
+        var owner = login("student", "test-password");
+        users.saveAndFlush(new UserEntity("other-user", "other@example.org", passwords.encode("other-password"), Role.USER, Instant.now()));
+        var other = login("other-user", "other-password");
+        for (String action : java.util.List.of("refresh", "logout")) {
+            mvc.perform(post("/api/auth/" + action).header("Authorization", bearer(other))
+                    .contentType(MediaType.APPLICATION_JSON).content(refreshBody(owner.get("refreshToken").asText())))
+                    .andExpect(status().isForbidden());
+        }
+        mvc.perform(post("/api/auth/logout").contentType(MediaType.APPLICATION_JSON)
+                .content(refreshBody(owner.get("refreshToken").asText()))).andExpect(status().isUnauthorized());
+        refresh(owner,200);
+    }
+
     private JsonNode refresh(JsonNode pair, int expected) throws Exception {
         return json.readTree(mvc.perform(post("/api/auth/refresh").contentType(MediaType.APPLICATION_JSON)
                         .content(refreshBody(pair.get("refreshToken").asText())))

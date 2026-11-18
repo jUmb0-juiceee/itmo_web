@@ -54,25 +54,25 @@ class StudentHttpIT {
         String body = """
                 {"isu":887766,"fio":"Иванов Иван Иванович","group":"M3301","notes":"HTTP-пример"}
                 """;
-        var created = send("POST", "/api/requests", body);
+        var created = send("POST", "/api/students", body);
         assertThat(created.statusCode()).isEqualTo(201);
         assertThat(students.findByIsu(887766)).isPresent();
 
-        var query = send("QUERY", "/api/requests", "{\"search\":\"http-ПРИМЕР\",\"sort\":\"isu,desc\"}");
+        var query = send("QUERY", "/api/students", "{\"search\":\"http-ПРИМЕР\",\"sort\":\"isu,desc\"}");
         assertThat(query.statusCode()).isEqualTo(200);
         assertThat(json.readTree(query.body()).at("/data/0/isu").asInt()).isEqualTo(887766);
 
-        assertThat(send("PATCH", "/api/requests/887766", "{\"isForeigner\":true}").statusCode()).isEqualTo(200);
+        assertThat(send("PATCH", "/api/students/887766", "{\"isForeigner\":true}").statusCode()).isEqualTo(200);
         assertThat(students.findByIsu(887766).orElseThrow().isForeigner()).isTrue();
-        assertThat(send("PATCH", "/api/requests/887766", "{\"dorm\":1}").statusCode()).isEqualTo(422);
+        assertThat(send("PATCH", "/api/students/887766", "{\"dorm\":1}").statusCode()).isEqualTo(422);
         assertThat(students.findByIsu(887766).orElseThrow().getDorm()).isNull();
 
-        assertThat(send("PUT", "/api/requests/887766", body).statusCode()).isEqualTo(200);
+        assertThat(send("PUT", "/api/students/887766", body).statusCode()).isEqualTo(200);
         assertThat(students.findByIsu(887766).orElseThrow().isForeigner()).isFalse();
-        assertThat(send("GET", "/api/requests/887766", null).statusCode()).isEqualTo(200);
-        assertThat(send("DELETE", "/api/requests/887766", null).statusCode()).isEqualTo(204);
+        assertThat(send("GET", "/api/students/887766", null).statusCode()).isEqualTo(200);
+        assertThat(send("DELETE", "/api/students/887766", null).statusCode()).isEqualTo(204);
         assertThat(students.findByIsu(887766)).isEmpty();
-        assertThat(send("GET", "/api/requests/887766", null).statusCode()).isEqualTo(404);
+        assertThat(send("GET", "/api/students/887766", null).statusCode()).isEqualTo(404);
     }
 
     @AfterEach

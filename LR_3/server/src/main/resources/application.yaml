@@ -64,6 +64,7 @@ management:
         enabled: true
 
 springdoc:
+  packages-to-scan: ru.itmo.students.openapi
   remove-broken-reference-definitions: false
   api-docs:
     enabled: true

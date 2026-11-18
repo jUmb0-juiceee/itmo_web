@@ -49,11 +49,10 @@ class StudentContractTest {
     @Test
     void patchDistinguishesAnOmittedFieldFromExplicitNull() throws Exception {
         var patch = json.readValue("{\"dorm\":null,\"isForeigner\":false}", StudentPatchRequest.class);
-        assertThat(patch.fields()).doesNotContainKey("fio");
-        assertThat(patch.fields().get("dorm").isNull()).isTrue();
-        assertThat(patch.fields().get("isForeigner").asBoolean()).isFalse();
-        assertThat(json.readTree(json.writeValueAsString(patch)))
-                .isEqualTo(json.readTree("{\"dorm\":null,\"isForeigner\":false}"));
+        assertThat(patch.has("fio")).isFalse();
+        assertThat(patch.has("dorm")).isTrue();
+        assertThat(patch.dorm()).isNull();
+        assertThat(patch.isForeigner()).isFalse();
     }
 
     @Test

@@ -1,7 +1,6 @@
 package ru.itmo.students.controller;
 
 import jakarta.validation.Valid;
-import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -10,7 +9,6 @@ import ru.itmo.students.dto.*;
 import ru.itmo.students.service.AuthService;
 
 @RestController
-@Hidden // Documented by the explicit OpenAPI contract in resources/openapi.
 @RequestMapping(path = "/api/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuthController {
     private final AuthService auth;
@@ -29,8 +27,8 @@ public class AuthController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(auth.refresh(request.refreshToken()));
     }
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request) {
-        auth.logout(request.refreshToken());
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody RefreshRequest request) {
+        auth.logout(request.refreshToken(), Long.parseLong(jwt.getSubject()));
         return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build();
     }
     @GetMapping("/me")

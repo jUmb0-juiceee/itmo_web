@@ -10,7 +10,7 @@ info:
     и нажмите Authorize. Вставляйте только токен, без префикса Bearer.
     Refresh передаётся в JSON-теле, обновляется при каждом использовании.
 
-    Нестандартный QUERY /api/requests использует JSON с теми же критериями,
+    Нестандартный QUERY /api/students использует JSON с теми же критериями,
     что GET. В OpenAPI 3.0 он описан расширением x-query, а не фиктивным POST.
     Swagger UI не выполняет QUERY: используйте подготовленную коллекцию Postman.
     Выход отзывает refresh; выданный access действует до своего истечения.
@@ -106,8 +106,7 @@ paths:
       tags: [Авторизация]
       operationId: logout
       summary: Отозвать текущий refresh-токен
-      description: Не отзывает другие сеансы и ещё не истёкшие access-токены. Передайте последний refresh после ротации, без Bearer.
-      security: []
+      description: Requires access Bearer and a refresh token owned by the authenticated user.
       requestBody:
         required: true
         content:
@@ -134,7 +133,7 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '429': {$ref: '#/components/responses/TooManyRequests'}
         '500': {$ref: '#/components/responses/ServerError'}
-  /api/requests:
+  /api/students:
     get:
       tags: [Студенты]
       operationId: listStudents
@@ -146,7 +145,7 @@ paths:
         Нумерация страниц от 1. Пустая выборка имеет total_pages=0.
         По умолчанию порядок добавления; при равенстве сортировки используется id ASC.
 
-        Эквивалентный QUERY /api/requests принимает JSON, например:
+        Эквивалентный QUERY /api/students принимает JSON, например:
         {"page":1,"limit":20,"search":"Иванов","group":"M3301","isForeigner":false,"sort":"fio,asc"}.
         Для выполнения QUERY используйте коллекцию Postman.
       parameters:
@@ -184,7 +183,7 @@ paths:
           headers:
             Location:
               description: Путь к созданной записи
-              schema: {type: string, example: /api/requests/123456}
+              schema: {type: string, example: /api/students/123456}
           content:
             application/json:
               schema: {$ref: '#/components/schemas/StudentResponse'}
@@ -211,7 +210,7 @@ paths:
         '403': {$ref: '#/components/responses/Forbidden'}
     x-query:
       operationId: queryStudents
-      summary: QUERY /api/requests — USER или ADMIN
+      summary: QUERY /api/students — USER или ADMIN
       description: Нестандартный HTTP-метод; поля JSON эквивалентны параметрам GET. Выполняется из Postman, не из Swagger UI.
       security:
         - bearerAuth: []
@@ -231,7 +230,7 @@ paths:
         '403': {$ref: '#/components/responses/Forbidden'}
         '429': {$ref: '#/components/responses/TooManyRequests'}
         '500': {$ref: '#/components/responses/ServerError'}
-  /api/requests/{isu}:
+  /api/students/{isu}:
     parameters:
       - name: isu
         in: path

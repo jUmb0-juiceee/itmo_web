@@ -45,10 +45,10 @@ class RateLimitTest {
     void filterReturnsJson429AndDoesNotTrustForwardedIp() throws Exception {
         var mapper = JsonMapper.builder().build();
         var filter = new RateLimitFilter(new IpRateLimiter(1, Duration.ofSeconds(60), () -> 0L), new ApiErrorWriter(mapper));
-        var first = new MockHttpServletRequest("GET", "/api/requests");
+        var first = new MockHttpServletRequest("GET", "/api/students");
         first.setRemoteAddr("127.0.0.1");
         filter.doFilter(first, new MockHttpServletResponse(), new MockFilterChain());
-        var second = new MockHttpServletRequest("QUERY", "/api/requests");
+        var second = new MockHttpServletRequest("QUERY", "/api/students");
         second.setRemoteAddr("127.0.0.1");
         second.addHeader("X-Forwarded-For", "another-address");
         var response = new MockHttpServletResponse();
@@ -56,7 +56,7 @@ class RateLimitTest {
         assertThat(response.getStatus()).isEqualTo(429);
         assertThat(response.getHeader("Retry-After")).isEqualTo("60");
         assertThat(mapper.readTree(response.getContentAsString()).get("details").get("retry_after").asInt()).isEqualTo(60);
-        var options = new MockHttpServletRequest("OPTIONS", "/api/requests");
+        var options = new MockHttpServletRequest("OPTIONS", "/api/students");
         options.setRemoteAddr("127.0.0.1");
         var preflight = new MockHttpServletResponse();
         filter.doFilter(options, preflight, new MockFilterChain());

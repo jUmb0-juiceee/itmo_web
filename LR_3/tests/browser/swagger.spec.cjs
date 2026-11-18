@@ -20,16 +20,17 @@ test('Swagger displays the actual contract and executes a protected GET with Bea
     await page.locator('.modal-ux').getByRole('button', { name: 'Apply credentials', exact: true }).click();
     await page.locator('.modal-ux').getByRole('button', { name: 'Close', exact: true }).click();
     const list = page.locator('.opblock-get').filter({
-        has: page.locator('.opblock-summary-path[data-path="/api/requests"]')
+        has: page.locator('.opblock-summary-path[data-path="/api/students"]')
     });
     await list.locator('.opblock-summary').click();
     await list.getByRole('button', { name: 'Try it out', exact: true }).click();
     const pending = page.waitForResponse(response => response.request().method() === 'GET'
-        && response.url().includes('/api/requests'));
+        && response.url().includes('/api/students'));
     await list.getByRole('button', { name: 'Execute', exact: true }).click();
     const result = await pending;
     expect(result.status()).toBe(200);
     expect(result.request().headers().authorization).toBe('Bearer ' + tokens.accessToken);
     expect(failures).toEqual([]);
-    expect((await request.post(api + '/auth/logout', { data: { refreshToken: tokens.refreshToken } })).status()).toBe(204);
+    const current = await (await request.post(api + '/auth/refresh', {data: {refreshToken: tokens.refreshToken}})).json();
+    expect((await request.post(api + '/auth/logout', {headers: {Authorization: 'Bearer ' + current.accessToken}, data: {refreshToken: current.refreshToken}})).status()).toBe(204);
 });

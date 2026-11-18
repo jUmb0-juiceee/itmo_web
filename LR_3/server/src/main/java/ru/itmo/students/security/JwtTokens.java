@@ -34,7 +34,7 @@ public class JwtTokens {
                 .claim("username", user.getUsername()).claim("role", user.getRole().name()).build();
         var refresh = claims(user, refreshId.toString(), now, now.plus(properties.refreshTtl()), "refresh", properties.refreshAudience()).build();
         return new TokenResponse(encode(access), encode(refresh), "Bearer", properties.accessTtl().toSeconds(),
-                properties.refreshTtl().toSeconds(), UserResponse.from(user));
+                properties.refreshTtl().toSeconds(), ru.itmo.students.mapper.StudentMapper.user(user));
     }
 
     public Jwt decodeRefresh(String token) {

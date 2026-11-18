@@ -50,13 +50,6 @@ public class StudentInputParser {
         return new StudentWriteRequest(isu, fio, group, dorm, room, date, foreigner, notes);
     }
 
-    public StudentWriteRequest merge(StudentResponse current, StudentPatchRequest patch) {
-        var merged = json.valueToTree(current);
-        var object = (com.fasterxml.jackson.databind.node.ObjectNode) merged;
-        patch.fields().forEach((field, value) -> { if (FIELDS.contains(field)) object.set(field, value); });
-        return write(object, true);
-    }
-
     public StudentQueryRequest query(Map<String, String> params) {
         JsonNode body = json.valueToTree(params);
         return query(body);

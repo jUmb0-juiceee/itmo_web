@@ -96,7 +96,7 @@ async function fetchStudents(filters = {}, page = 1, limit = 20, search = '', so
     }
     
     try {
-        const response = await Auth.fetch(`/requests?${params.toString()}`);
+        const response = await Auth.fetch(`/students?${params.toString()}`);
         
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -111,7 +111,7 @@ async function fetchStudents(filters = {}, page = 1, limit = 20, search = '', so
 
 async function fetchStudent(isu) {
     try {
-        const response = await Auth.fetch(`/requests/${isu}`);
+        const response = await Auth.fetch(`/students/${isu}`);
         
         if (response.status === 404) return null;
         
@@ -128,7 +128,7 @@ async function fetchStudent(isu) {
 
 async function createStudent(studentData) {
     try {
-        const response = await Auth.fetch('/requests', {
+        const response = await Auth.fetch('/students', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(studentData)
@@ -147,7 +147,7 @@ async function createStudent(studentData) {
 
 async function updateStudent(isu, studentData) {
     try {
-        const response = await Auth.fetch(`/requests/${isu}`, {
+        const response = await Auth.fetch(`/students/${isu}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(studentData)
@@ -166,7 +166,7 @@ async function updateStudent(isu, studentData) {
 
 async function deleteStudent(isu) {
     try {
-        const response = await Auth.fetch(`/requests/${isu}`, {
+        const response = await Auth.fetch(`/students/${isu}`, {
             method: 'DELETE'
         });
         

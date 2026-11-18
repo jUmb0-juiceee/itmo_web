@@ -41,7 +41,7 @@ test('registration, read-only role, direct form protection and API 403', async (
     let refreshes = 0;
     page.on('request', req => { if (req.url().endsWith('/auth/refresh')) refreshes++; });
     const denied = await page.evaluate(async () => {
-        const response = await Auth.fetch('/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        const response = await Auth.fetch('/students', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
         return { status: response.status, body: await response.json() };
     });
     expect(denied.status).toBe(403);
@@ -105,7 +105,7 @@ test('expired access triggers one refresh for concurrent requests and survives a
     // E2E server is started with a 3-second access TTL, independently of production defaults.
     await page.waitForTimeout(3300);
     const statuses = await page.evaluate(async () => Promise.all([
-        Auth.fetch('/requests').then(response => response.status),
+        Auth.fetch('/students').then(response => response.status),
         Auth.fetch('/auth/me').then(response => response.status)
     ]));
     expect(statuses).toEqual([200, 200]);
@@ -121,7 +121,7 @@ test('expired access triggers one refresh for concurrent requests and survives a
 test('revoked refresh clears the session and returns to login', async ({ page, request }) => {
     await login(page, await reader(request));
     const session = await page.evaluate(key => JSON.parse(sessionStorage.getItem(key)), key);
-    expect((await request.post(api + '/auth/logout', { data: { refreshToken: session.refreshToken } })).status()).toBe(204);
+    expect((await request.post(api + '/auth/logout', { headers: {Authorization: 'Bearer ' + session.accessToken}, data: { refreshToken: session.refreshToken } })).status()).toBe(204);
     await page.evaluate(key => {
         const value = JSON.parse(sessionStorage.getItem(key)); value.accessToken = 'invalid';
         sessionStorage.setItem(key, JSON.stringify(value));
@@ -136,11 +136,11 @@ test('temporary refresh network failure keeps credentials for a later retry', as
     await page.waitForTimeout(3300);
     await page.route('**/api/auth/refresh', route => route.abort(), { times: 1 });
     const failed = await page.evaluate(async () => {
-        try { await Auth.fetch('/requests'); return false; } catch { return true; }
+        try { await Auth.fetch('/students'); return false; } catch { return true; }
     });
     expect(failed).toBe(true);
     expect(await page.evaluate(key => sessionStorage.getItem(key), key)).not.toBeNull();
-    expect(await page.evaluate(async () => (await Auth.fetch('/requests')).status)).toBe(200);
+    expect(await page.evaluate(async () => (await Auth.fetch('/students')).status)).toBe(200);
     await expect(page).toHaveURL(/index\.html$/);
 });
 

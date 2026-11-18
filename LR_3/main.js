@@ -212,7 +212,7 @@ async function loadStudentsViaQuery(filters, search = currentSearch, page = 1) {
     
     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
     try {
-        const response = await Auth.fetch('/requests', {
+        const response = await Auth.fetch('/students', {
             method: 'QUERY', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

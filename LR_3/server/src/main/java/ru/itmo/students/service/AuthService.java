@@ -43,7 +43,7 @@ public class AuthService {
         this.dummyHash = passwords.encode(UUID.randomUUID().toString());
     }
 
-    public UserResponse register(RegistrationRequest request) { return UserResponse.from(createUser(request, Role.USER)); }
+    public UserResponse register(RegistrationRequest request) { return ru.itmo.students.mapper.StudentMapper.user(createUser(request, Role.USER)); }
 
     public TokenResponse login(LoginRequest request) {
         var user = users.findByUsernameIgnoreCase(request.username()).orElse(null);
@@ -55,6 +55,10 @@ public class AuthService {
 
     public TokenResponse refresh(String raw) {
         var stored = checkedRefresh(raw);
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof org.springframework.security.oauth2.jwt.Jwt jwt
+                && !stored.getUser().getId().toString().equals(jwt.getSubject()))
+            throw new ApiException(HttpStatus.FORBIDDEN, "Session belongs to another user");
         stored.revoke(now());
         // Revocation and replacement are committed atomically, with the old row locked.
         var response = newSession(stored.getUser());
@@ -62,15 +66,16 @@ public class AuthService {
         return response;
     }
 
-    public void logout(String raw) {
+    public void logout(String raw, long userId) {
         var stored = checkedRefresh(raw);
+        if (stored.getUser().getId() != userId) throw new ApiException(HttpStatus.FORBIDDEN, "Session belongs to another user");
         stored.revoke(now());
         refreshTokens.flush();
     }
 
     @Transactional(readOnly = true)
     public UserResponse me(long id) {
-        return UserResponse.from(users.findById(id).orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Требуется авторизация")));
+        return ru.itmo.students.mapper.StudentMapper.user(users.findById(id).orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Требуется авторизация")));
     }
 
     /** Called only by the optional startup bootstrap, never exposed through REST. */

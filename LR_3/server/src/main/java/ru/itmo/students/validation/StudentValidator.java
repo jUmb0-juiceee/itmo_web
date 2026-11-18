@@ -15,6 +15,9 @@ public class StudentValidator {
     private static final Pattern FIO = Pattern.compile("^[А-ЯЁ][а-яё\\-]+ [А-ЯЁ][а-яё\\-]+ [А-ЯЁ][а-яё\\-]+$");
     private static final Pattern GROUP = Pattern.compile("^[A-Z][0-9]{4}$");
 
+    private final jakarta.validation.Validator beanValidator;
+    public StudentValidator(jakarta.validation.Validator beanValidator) { this.beanValidator=beanValidator; }
+
     public StudentWriteRequest normalize(StudentWriteRequest input, boolean patch) {
         var errors = new LinkedHashMap<String, Object>();
         String fio = input.fio() == null ? null : input.fio().strip();
@@ -25,19 +28,10 @@ public class StudentValidator {
         if (!errors.isEmpty()) throw new ApiException(patch ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.BAD_REQUEST,
                 "Ошибка валидации", errors);
 
-        if (input.isu() < 100000 || input.isu() > 999999) errors.put("isu", "ИСУ ID должен состоять ровно из 6 цифр.");
-        if (fio.length() > 150) errors.put("fio", "ФИО не должно превышать 150 символов.");
-        else if (!FIO.matcher(fio).matches()) errors.put("fio", "ФИО должно состоять из трёх слов на русском языке, каждое с заглавной буквы.");
-        if (group.length() > 10 || !GROUP.matcher(group).matches())
-            errors.put("group", "Группа должна состоять из заглавной латинской буквы и 4 цифр (например, M3301).");
-        if (input.dorm() != null && (input.dorm() < 1 || input.dorm() > 999))
-            errors.put("dorm", "Номер общежития должен быть целым числом от 1 до 999.");
-        if (input.room() != null && (input.room() < 1 || input.room() > 9999))
-            errors.put("room", "Номер комнаты должен быть целым числом от 1 до 9999.");
-        if (input.date() != null && (input.date().getYear() < 2000 || input.date().getYear() > 9999))
-            errors.put("date", "Год даты заселения должен быть от 2000 до 9999.");
         String notes = input.notes() == null ? "" : input.notes().strip();
-        if (notes.codePointCount(0, notes.length()) > 500) errors.put("notes", "Заметки не должны превышать 500 символов.");
+        var normalized = new StudentWriteRequest(input.isu(), fio, group, input.dorm(), input.room(), input.date(), Boolean.TRUE.equals(input.isForeigner()), notes);
+        beanValidator.validate(normalized).forEach(v -> errors.putIfAbsent(v.getPropertyPath().toString(), v.getMessage()));
+        if(input.date()!=null && (input.date().getYear()<2000 || input.date().getYear()>9999)) errors.put("date","Year must be between 2000 and 9999.");
         int count = (input.dorm() == null ? 0 : 1) + (input.room() == null ? 0 : 1) + (input.date() == null ? 0 : 1);
         if (count != 0 && count != 3) errors.put("non_field_errors",
                 "Общежитие, комната и дата заселения должны быть заполнены вместе либо все очищены.");
